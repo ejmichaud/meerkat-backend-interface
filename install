@@ -1,0 +1,104 @@
+#!/bin/bash
+
+cat << "EOF"
+
+#################################################################
+                            
+                            Welcome!
+
+#################################################################
+
+            ______________                      ,-.
+           /             /|                    / \  `.  __..-,O
+          /             / |                   :   \ --''_..-'.'
+         /____________ /  |                   |    . .-' `. '.
+        | ___________ |   |                   :     .     .`.'
+        ||           ||   |                    \     `.  /  .. 
+        ||           ||   |                     \      `.   ' .
+        ||           ||   |                      `,       `.   \
+        ||___________||   |                     ,|,`.        `-.\
+        |   _______   |  /                     '.||  ``-...__..-`
+       /|  (_______)  | /____________           |  |
+      ( |_____________|/             \          |__|
+       \                              \         /||\
+    .=======================.           \       //||\\
+    | ::::::::::::::::  ::: |            \     // || \\        
+    | ::::::::::::::[]  ::: |             \___//__||__\\___
+    |   -----------     ::: |              '--------------'
+    \-----------------------  
+
+
+#################################################################
+                    
+            This script will install the metadata server
+            for Breakthrough Listen's MeerKAT backend
+
+#################################################################
+
+
+EOF
+
+
+############################### 
+#        Confirm Install      #
+###############################
+while true; do
+    echo -n "Do you wish to proceed? (yes / no) >>>  "
+    read answer
+    if [ "$answer" = "yes" ] ;then
+        break
+    elif [ "$answer" = "no" ]; then
+        exit
+    else
+        echo "Must answer with 'yes' or 'no'"
+    fi
+done
+
+
+############################### 
+# Create virtual envirnoment  #
+###############################
+PYTHON="$(which python)"
+echo "Default python is: ${PYTHON}"
+echo "I recommend this one: /usr/bin/python"
+echo -n "Press ENTER to use this or enter a different Python 2 to use >>> "
+read answer
+if [ "$answer" != "" ] ;then
+    PYTHON="$answer"
+    echo "Using: $PYTHON"
+else
+    echo "Using: $PYTHON"
+fi
+
+if [ -d venv/ ]; then rm -rf venv/ ; fi
+virtualenv -p $PYTHON venv
+source venv/bin/activate
+
+
+############################### 
+#    Install redis server     #
+###############################
+cd venv/; mkdir other_packages; cd other_packages
+wget http://download.redis.io/redis-stable.tar.gz
+tar xvzf redis-stable.tar.gz
+cd redis-stable
+make
+sudo make install
+
+
+############################### 
+# Install python requirements #
+###############################
+pip install -r requirements.txt
+
+
+############################### 
+#    Install Redmon Server    #
+###############################
+gem install redmon
+
+
+############################### 
+#          Finish Up          #
+###############################
+deactivate
