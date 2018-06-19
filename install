@@ -42,22 +42,25 @@ EOF
 ############################### 
 #        Confirm Install      #
 ###############################
-while true; do
+while true ;do
     echo -n "Do you wish to proceed? (yes / no) >>>  "
     read answer
     if [ "$answer" = "yes" ] ;then
         break
-    elif [ "$answer" = "no" ]; then
+    elif [ "$answer" = "no" ] ;then
         exit
     else
         echo "Must answer with 'yes' or 'no'"
     fi
 done
 
+cat << EOF
 
 ############################### 
 # Create virtual envirnoment  #
 ###############################
+
+EOF
 PYTHON="$(which python)"
 echo "Default python is: ${PYTHON}"
 echo "I recommend this one: /usr/bin/python"
@@ -74,31 +77,51 @@ if [ -d venv/ ]; then rm -rf venv/ ; fi
 virtualenv -p $PYTHON venv
 source venv/bin/activate
 
+cat << EOF
 
 ############################### 
 #    Install redis server     #
 ###############################
-cd venv/; mkdir other_packages; cd other_packages
-wget http://download.redis.io/redis-stable.tar.gz
-tar xvzf redis-stable.tar.gz
-cd redis-stable
-make
-sudo make install
 
+EOF
+if [ -e /usr/local/bin/redis-server ]; then
+    echo "Redis already installed"
+else 
+    cd venv/; mkdir other_packages; cd other_packages
+    wget http://download.redis.io/redis-stable.tar.gz
+    tar xvzf redis-stable.tar.gz
+    cd redis-stable
+    make
+    sudo make install
+    cd ../../
+fi
+
+
+cat << EOF
 
 ############################### 
 # Install python requirements #
 ###############################
+
+EOF
 pip install -r requirements.txt
 
 
-############################### 
-#    Install Redmon Server    #
-###############################
-gem install redmon
+# cat << EOF
+
+# ############################### 
+# #    Install Redmon Server    #
+# ###############################
+
+# EOF
+# sudo gem install redmon
 
 
+cat << EOF
+
 ############################### 
-#          Finish Up          #
+#          Finished!          #
 ###############################
+
+EOF
 deactivate
