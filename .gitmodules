@@ -1,0 +1,4 @@
+[submodule "reynard"]
+	path = reynard
+	url = https://github.com/ewanbarr/reynard.git
+	branch = tuse_interface
