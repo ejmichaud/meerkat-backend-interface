@@ -93,7 +93,7 @@ class BLBackendInterface(UniversalBackendInterface):
       / /         | ;         ; |
      | |      __,-| |--..__,--| |---.--....___
 ___,-| |----''    / |         `._`-.          `----
-      \ \        `"""             """      --
+      \ \        `'''             '''      --
        `.`.                 --'
          `.`-._        _,             ,-     __,-
             `-.`.
@@ -140,27 +140,62 @@ ___,-| |----''    / |         `._`-.          `----
         except:
             log.error("Failed to publish to {}".format(channel))
 
-    def request_weather(self, req, msg):
+    @request(Str())
+    @return_reply(Str())
+    def request_weather(self, req, location):
         """Gets the weather. 
 
         Queries the Yahoo Weather API with the request message
         as the location, spaces and commas included. 
         """
-        if not msg.arguments:
+        if not location:
             location = "Berkeley, CA"
-        else:
-            location = ' '.join(msg.arguments)
         from weather import Weather, Unit
         try:
             weather_local = Weather(unit=Unit.FAHRENHEIT).lookup_by_location(location)
             temperature = weather_local.condition.temp
-            redis_key = location.replace(",", "").replace(" ", "_").lower()
+            redis_key = "weather:" + location.replace(",", "").replace(" ", "_").lower()
             redis_value = temperature
             self._write_to_redis(redis_key, redis_value)
             self._publish_to_redis("weather", "Weather in {} --> {} *F".format(location, temperature))
-            return req.make_reply(" :::  Weather in {} --> {} *F".format(location, temperature))
+            return ("ok", " :::  Weather in {} --> {} *F".format(location, temperature))
         except:
-            return req.make_reply(" :::  FAIL --> Weather in {} --> {} *F".format(location, "?!!!??!"))
+            return ("fail", "unrecognized location")
+
+    @request()
+    @return_reply(Str())
+    def request_find_alien(self, req):
+        """Finds an alien.
+
+        """
+        return ("ok", R"""
+.     .       .  .   . .   .   . .    +  .
+  .     .  :     .    .. :. .___---------___.
+       .  .   .    .  :.:. _".^ .^ ^.  '.. :"-_. .
+    .  :       .  .  .:../:            . .^  :.:\.
+        .   . :: +. :.:/: .   .    .        . . .:\
+ .  :    .     . _ :::/:               .  ^ .  . .:\
+  .. . .   . - : :.:./.                        .  .:\
+  .      .     . :..|:                    .  .  ^. .:|
+    .       . : : ..||        .                . . !:|
+  .     . . . ::. ::\(                           . :)/
+ .   .     : . : .:.|. ######              .#######::|
+  :.. .  :-  : .:  ::|.#######           ..########:|
+ .  .  .  ..  .  .. :\ ########          :######## :/
+  .        .+ :: : -.:\ ########       . ########.:/
+    .  .+   . . . . :.:\. #######       #######..:/
+      :: . . . . ::.:..:.\           .   .   ..:/
+   .   .   .  .. :  -::::.\.       | |     . .:/
+      .  :  .  .  .-:.":.::.\             ..:/
+ .      -.   . . . .: .:::.:.\.           .:/
+.   .   .  :      : ....::_:..:\   ___.  :/
+   .   .  .   .:. .. .  .: :.:.:\       :/
+     +   .   .   : . ::. :.:. .:.|\  .:/|
+     .         +   .  .  ...:: ..|  --.:|
+.      . . .   .  .  . ... :..:.."(  ..)"
+ .   .       .      :  .   .: ::/  .  .::\            
+        """)
+
 
 # class BLBackendInterface(AsyncDeviceServer):
 
