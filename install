@@ -84,10 +84,11 @@ cat << EOF
 ###############################
 
 EOF
+mkdir venv/other_packages
 if [ -e /usr/local/bin/redis-server ]; then
     echo "Redis already installed"
 else 
-    cd venv/; mkdir other_packages; cd other_packages
+    cd venv/other_packages
     wget http://download.redis.io/redis-stable.tar.gz
     tar xvzf redis-stable.tar.gz
     cd redis-stable
@@ -105,16 +106,10 @@ cat << EOF
 
 EOF
 pip install -r requirements.txt
-
-
-# cat << EOF
-
-# ############################### 
-# #    Install Redmon Server    #
-# ###############################
-
-# EOF
-# sudo gem install redmon
+cd venv/other_packages
+git clone https://github.com/ska-sa/katportalclient.git
+python setup.py install
+cd ../../
 
 
 cat << EOF

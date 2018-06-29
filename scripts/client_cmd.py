@@ -1,6 +1,6 @@
+#!/usr/bin/env python
 import logging
 import sys
-import os
 import traceback
 import katcp
 import readline
@@ -19,6 +19,7 @@ log = logging.getLogger("reynard.basic_cli")
 class KatcpCli(Cmd):
     """
     @brief      Basic command line interface to KATCP device
+
     @detail     This class provides a command line interface to
                 to any katcp.DeviceClient subclass. Behaviour of the
                 interface is determined by the client object passed
@@ -29,13 +30,14 @@ class KatcpCli(Cmd):
     def __init__(self,host,port,*args,**kwargs):
         """
         @brief  Instantiate new KatcpCli instance
+
         @params client A DeviceClient instance
         """
         self.host = host
         self.port = port
         self.katcp_parser = katcp.MessageParser()
         self.start_client()
-        Cmd.__init__(self,args,kwargs)
+        Cmd.__init__(self, *args, **kwargs)
 
     def start_client(self):
         log.info("Client connecting to port {self.host}:{self.port}".format(**locals()))
@@ -50,6 +52,7 @@ class KatcpCli(Cmd):
     def do_katcp(self, arg, opts=None):
         """
         @brief      Send a request message to a katcp server
+
         @param      arg   The katcp formatted request
         """
         request = "?" + "".join(arg)
@@ -66,14 +69,21 @@ class KatcpCli(Cmd):
     def do_connect(self, arg, opts=None):
         """
         @brief      Connect to different KATCP server
+
         @param      arg   Target server address in form "host:port"
         """
         try:
-            self.host,self.port = arg.split(":")
+            host,port = arg.split(":")
         except Exception:
             print "Usage: connect <host>:<port>"
-        self.stop_client()
-        self.start_client()
+            return
+        try:
+            app = KatcpCli(host,port)
+            app.cmdloop()
+        except Exception as error:
+            log.exception("Error from CLI")
+        finally:
+            app.stop_client()
 
 
 if __name__ == "__main__":
