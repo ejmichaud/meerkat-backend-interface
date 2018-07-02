@@ -140,27 +140,6 @@ ___,-| |----''    / |         `._`-.          `----
         except:
             log.error("Failed to publish to {}".format(channel))
 
-    @request(Str())
-    @return_reply(Str())
-    def request_weather(self, req, location):
-        """Gets the weather. 
-
-        Queries the Yahoo Weather API with the request message
-        as the location, spaces and commas included. 
-        """
-        if not location:
-            location = "Berkeley, CA"
-        from weather import Weather, Unit
-        try:
-            weather_local = Weather(unit=Unit.FAHRENHEIT).lookup_by_location(location)
-            temperature = weather_local.condition.temp
-            redis_key = "weather:" + location.replace(",", "").replace(" ", "_").lower()
-            redis_value = temperature
-            self._write_to_redis(redis_key, redis_value)
-            self._publish_to_redis("weather", "Weather in {} --> {} *F".format(location, temperature))
-            return ("ok", " :::  Weather in {} --> {} *F".format(location, temperature))
-        except:
-            return ("fail", "unrecognized location")
 
     @request()
     @return_reply(Str())
