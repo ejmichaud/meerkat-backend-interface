@@ -32,6 +32,7 @@ https://github.com/ewanbarr/reynard
 import logging
 import socket
 import json
+import time
 from tornado.gen import coroutine
 from katcp import AsyncDeviceServer, AsyncReply
 from katcp.kattypes import request, return_reply, Int, Str, Discrete
@@ -106,7 +107,7 @@ ___,-| |----''    / |         `._`-.          `----
    --'         `;
         """.format("{}.{}".format(self.VERSION_INFO[1], self.VERSION_INFO[2]), self.port))
 
-    def _write_to_redis(self, key, value):
+    def _write_pair_redis(self, key, value):
         """Creates a key-value pair self.redis_server's redis-server.
 
         Args:
@@ -114,7 +115,7 @@ ___,-| |----''    / |         `._`-.          `----
             value (str): the value of the key-value pair
         
         Returns:
-            None... but logs either an 'info' or 'error' message
+            None... but logs either an 'debug' or 'error' message
         
         Examples:
             >>> server = BLBackendInterface('localhost', 5000)
@@ -122,9 +123,28 @@ ___,-| |----''    / |         `._`-.          `----
         """
         try:
             self.redis_server.set(key, value)
-            log.info("Created redis key/value: {} --> {}".format(key, value))
+            log.debug("Created redis key/value: {} --> {}".format(key, value))
         except:
             log.error("Failed to create redis key/value pair")
+
+    def _write_list_redis(self, key, values):
+        """Creates a new list and rpushes values to it
+
+            If a list already exists at the given key, then
+            delete it and rpush values to a new empty list
+            
+            Args:
+                key (str): key identifying the list
+                values (list): list of values to rpush to redis list
+
+        """
+        if self.redis_server.exists(key):
+            self.redis_server.delete(key)
+        try:
+            self.redis_server.rpush(key, *values)
+            log.debug("Pushed to list: {} --> {}".format(key, values))
+        except:
+            log.error("Failed to rpush to {}".format(channel))
 
     def _publish_to_redis(self, channel, message):
         """Publishes a message to a channel in self.redis_server's redis-server.
@@ -134,7 +154,7 @@ ___,-| |----''    / |         `._`-.          `----
             message (str): the message to be published
         
         Returns:
-            None... but logs either an 'info' or 'error' message
+            None... but logs either an 'debug' or 'error' message
         
         Examples:
             >>> server = BLBackendInterface('localhost', 5000)
@@ -142,7 +162,7 @@ ___,-| |----''    / |         `._`-.          `----
         """
         try:
             self.redis_server.publish(channel, message)
-            log.info("Published to {} --> {}".format(channel, message))
+            log.debug("Published to {} --> {}".format(channel, message))
         except:
             log.error("Failed to publish to {}".format(channel))
 
@@ -157,7 +177,7 @@ ___,-| |----''    / |         `._`-.          `----
         be used to configure a BLUSE instance when a new subarray is activated.
         
         TODO:
-            If using katportalclient to get information from CAM, 
+            - If using katportalclient to get information from CAM, 
             then reconnect and re-subscribe to all sensors of interest at this time.
 
         Args:
@@ -211,22 +231,31 @@ ___,-| |----''    / |         `._`-.          `----
 
         Returns:
             None... but replies with "ok" and logs either info or error
+            
+        Writes:
+            - subbarry1_abc65555:timestamp" -> "1534657577373.23423"  :: Redis String
+            - subarray1_abc65555:antennas" -> [1,2,3,4] :: Redis List
+            - subarray1_abc65555:n_channels" -> "4096" :: Redis String
+            - subarray1_abc65555:proxy_name "-> "BLUSE_whatever" :: Redis String
+            - subarray1_abc65555:streams" -> {....} :: Redis Hash !!!CURRENTLY A STRING!!!
+            - current:obs:metadata -> "subbary1_abc65555"
 
+        Publishes:
+            redis-channel: 'alerts' <-- "configure"
+        
         Examples:
-            > ?configure array_1_bc856M4k a1,a2,a3,a4 128000 {'stream_type1':{'stream_name1':'stream_address1','stream_name2':'stream_address2'},'stream_type2':{'stream_name1':'stream_address1','stream_name2':'stream_address2'}} BLUSE_3
+            > ?configure array_1_bc856M4k a1,a2,a3,a4 128000 {"stream_type1":{"stream_name1":"stream_address1","stream_name2":"stream_address2"},"stream_type2":{"stream_name1":"stream_address1","stream_name2":"stream_address2"}} BLUSE_3
         """
         try:
             antennas_list = antennas_csv.split(",")
-            data_dictionary = {
-                "product_id": product_id,
-                "antennas_list": antennas_list,
-                "n_channels": n_channels,
-                "streams_json": streams_json, # try repr(unpack_dict(streams_json))
-                "proxy_name": proxy_name
-            }
-            json_data_dictionary = json.dumps(data_dictionary)
-            self._write_to_redis("current:observation:metadata", json_data_dictionary)
-            self._publish_to_redis(self.REDIS_CHANNELS.alerts, json_data_dictionary)
+            self._write_pair_redis("{}:timestamp".format(product_id), time.time())
+            self._write_list_redis("{}:antennas".format(product_id), antennas_list)
+            self._write_pair_redis("{}:n_channels".format(product_id), n_channels)
+            self._write_pair_redis("{}:proxy_name".format(product_id), proxy_name)
+            self._write_pair_redis("{}:streams".format(product_id), repr(unpack_dict(streams_json)))
+            self._write_pair_redis("current:obs:metadata", product_id)
+            self._write_pair_redis(product_id, repr((streams_json)))
+            self._publish_to_redis(self.REDIS_CHANNELS.alerts, "configure")
             return ("ok", "")
         except Exception as e:
             return ("fail", e)
@@ -344,278 +373,3 @@ ___,-| |----''    / |         `._`-.          `----
         """)
 
 
-# class BLBackendInterface(AsyncDeviceServer):
-
-
-#     def __init__(self, server_host, server_port):
-#         self._nodes = {}
-#         self.port = server_port
-#         super(BLBackendInterface, self).__init__(
-#             server_host, server_port)
-
-#     def setup_sensors(self):
-#         """add sensors"""
-#         pass
-
-    
-
-#     def _add_node(self, name, ip, port):
-#         """Add a named node."""
-#         log.debug("Adding node '{0}' ({1}:{2})".format(name, ip, port))
-#         if name in self._nodes.keys():
-#             raise KeyError(
-#                 "Node already added with name '{name}'".format(
-#                     name=name))
-#         client = KATCPClientResource(dict(
-#             name=name,
-#             address=(ip, port),
-#             controlled=True))
-#         client.start()
-#         self._nodes[name] = client
-
-#     def _remove_node(self, name):
-#         """Remove a client by name."""
-#         log.debug("Removing node '{0}'".format(name))
-#         if name not in self._nodes.keys():
-#             raise KeyError(
-#                 "No node exists with name '{name}'".format(
-#                     name=name))
-#         self._nodes[name].stop()
-#         del self._nodes[name]
-
-#     # def request_weather(self, req):
-#     #     f = Future()
-#     #     @gen.coroutine
-#     #     def _halt():
-#     #         from weather import Weather, Unit
-#     #         location = Weather(unit=Unit.FAHRENHEIT).lookup_by_location('Berkeley, CA')
-#     #         req.reply(location.condition.temp)
-#     #         yield gen.moment
-#     #         self.stop(timeout=None)
-#     #         raise AsyncReply
-#     #     self.ioloop.add_callback(lambda: chain_future(_halt(), f))
-#     #     return f
-
-#     def request_weather(self, req, msg):
-#         """ Docstring. Are you happy now?
-
-#         """
-#         if not msg.arguments:
-#             location = "Berkeley, CA"
-#         else:
-#             location = ' '.join(msg.arguments)
-#         from weather import Weather, Unit
-#         weather_local = Weather(unit=Unit.FAHRENHEIT).lookup_by_location(location)
-#         #name = msg.arguments[0]
-#         # if name in self._request_handlers:
-#         #     method = self._request_handlers[name]
-#         #     doc = method.__doc__.strip()
-#         #     req.inform(name, doc)
-#         return req.make_reply(" :::  Weather in {} --> {} *F".format(location, weather_local.condition.temp))
-#         #return req.make_reply("fail", "Unknown request method.")
-
-#         # for name, method in sorted(self._request_handlers.items()):
-#         #         doc = method.__doc__
-#         #         req.inform(name, doc)
-#         #     num_methods = len(self._request_handlers)
-#         #     return req.make_reply("ok", str(num_methods))
-
-#     @request(Str(), Str())
-#     @return_reply(Str(), Str())
-#     def request_configure(self, req, config, sensors):
-#         """config"""
-#         @coroutine
-#         def configure(config):
-#             futures = {}
-#             node_count = len(config["nodes"])
-#             configured = 0
-#             for node in config["nodes"]:
-#                 host, port = node["host"], node["port"]
-#                 ip = socket.gethostbyname(host)
-#                 log.debug("Searching for node at {0}:{1}".format(ip, port))
-#                 for name, client in self._nodes.items():
-#                     log.debug("Testing client {0} at {1}".format(name,client.address))
-#                     if client.address == (ip, port) and client.is_connected():
-#                         log.debug(
-#                             "Found node at {0}:{1} named {2}".format(
-#                                 ip, port, name))
-#                         log.debug(
-#                             "Pipeline config for node: {0}".format(
-#                                 node["pipelines"]))
-#                         req.inform(
-#                             "Configuring node '{0}' ({1}:{2})".format(
-#                                 name, ip, port))
-#                         futures[name] = client.req.configure(
-#                             pack_dict(node["pipelines"]),
-#                             sensors, timeout=30)
-#                         break
-#                 else:
-#                     msg = "No node found at {0}:{1}".format(ip, port)
-#                     req.inform(msg)
-#                     log.warning(msg)
-
-#             for name, future in futures.items():
-#                 response = yield future
-#                 if not response.reply.reply_ok():
-#                     req.inform(
-#                         "Configuration failure from node '{0}': {1}".format(
-#                             name, str(
-#                                 response.messages)))
-#                 else:
-#                     configured += 1
-#             if configured >= 1:
-#                 req.reply(
-#                     "ok", "Configured {0} of {1} nodes".format(
-#                         configured, node_count))
-#             else:
-#                 req.reply("fail", "No nodes configured")
-#         self.ioloop.add_callback(lambda: configure(unpack_dict(config)))
-#         raise AsyncReply
-
-#     @coroutine
-#     def _all_nodes_request(self, req, cmd, *args, **kwargs):
-#         log.debug("Sending '{0}' request to all nodes".format(cmd))
-#         futures = {}
-#         for name, client in self._nodes.items():
-#             if client.is_connected():
-#                 futures[name] = client.req[cmd](*args, **kwargs)
-#         for name, future in futures.items():
-#             response = yield future
-#             if not response.reply.reply_ok():
-#                 msg = "Failure on '{0}' request to node '{1}': {2}".format(
-#                     cmd, name, str(response.messages))
-#                 log.error(msg)
-#                 req.reply("fail", msg)
-#                 return
-#         msg = "{0} request complete".format(cmd)
-#         log.debug(msg)
-#         req.reply("ok", msg)
-
-#     @request(Str())
-#     @return_reply(Str())
-#     def request_start(self, req, sensors):
-#         """start"""
-#         self.ioloop.add_callback(
-#             lambda: self._all_nodes_request(
-#                 req, "start", sensors, timeout=20.0))
-#         raise AsyncReply
-
-#     @request()
-#     @return_reply(Str())
-#     def request_stop(self, req):
-#         """stop"""
-#         self.ioloop.add_callback(
-#             lambda: self._all_nodes_request(
-#                 req, "stop", timeout=20.0))
-#         raise AsyncReply
-
-#     @request()
-#     @return_reply(Str())
-#     def request_deconfigure(self, req):
-#         """deconfig"""
-#         self.ioloop.add_callback(
-#             lambda: self._all_nodes_request(
-#                 req, "deconfigure", timeout=20.0))
-#         raise AsyncReply
-
-#     @request(Str(), Str(), Int())
-#     @return_reply(Str())
-#     def request_node_add(self, req, name, ip, port):
-#         """Add a new node."""
-#         try:
-#             self._add_node(name, ip, port)
-#         except KeyError as e:
-#             return ("fail", str(e))
-#         return ("ok", "added node")
-
-#     @request(Str())
-#     @return_reply(Str())
-#     def request_node_remove(self, req, name):
-#         """Add a new node."""
-#         try:
-#             self._remove_node(name)
-#         except KeyError as e:
-#             return ("fail", str(e))
-#         return ("ok", "removed node")
-
-#     @request()
-#     @return_reply(Str())
-#     def request_node_list(self, req):
-#         """List all connected nodes"""
-#         msg = [""]
-#         for ii, (name, node) in enumerate(self._nodes.items()):
-#             up = "[online]" if node.is_connected() else "[offline]"
-#             addr = "{0}:{1}".format(*node.address)
-#             msg.append("{node.name: <12} {addr} {up}".format(
-#                 node=node, addr=addr, up=up))
-#         req.inform("\n\_\_\_\_".join(msg))
-#         return ("ok", "{count} nodes found".format(count=len(self._nodes)))
-
-#     @request()
-#     @return_reply(Str())
-#     def request_status(self, req):
-#         """Return status for UBI backend"""
-#         status = {}
-#         @coroutine
-#         def status_query():
-#             futures = {}
-#             for name, client in self._nodes.items():
-#                 if not client.is_connected():
-#                     status[name] = {"status":"offline"}
-#                     continue
-#                 else:
-#                     status[name] = {"status":"online"}
-#                     futures[name] = client.req.status()
-#             for name, future in futures.items():
-#                 response = yield future
-#                 status[name].update(unpack_dict(response.reply.arguments[1]))
-#             req.reply("ok",pack_dict(status))
-#         self.ioloop.add_callback(status_query)
-#         raise AsyncReply
-
-#     @request()
-#     @return_reply(Discrete(DEVICE_STATUSES))
-#     def request_device_status(self, req):
-#         """Return status of the instrument.
-
-#         Notes: Status is based on aggregate information
-#                from all subordinate nodes.
-
-#         Currently this is a dummy function to test chaining
-#         async calls.
-#         """
-#         @coroutine
-#         def status_handler():
-#             futures = {}
-#             for name, client in self._nodes.items():
-#                 if client.is_connected():
-#                     future = client.req.device_status()
-#                     futures[name] = future
-#             statuses = {}
-#             for name, future in futures.items():
-#                 with_relative_timeout(2, future)
-#                 status = yield future
-#                 if not status:
-#                     req.inform(
-#                         "Warning {name} status request failed: {msg}".format(
-#                             name=name, msg=str(status)))
-#                 reply = status.reply
-#                 status_message = reply.arguments[1]
-#                 req.inform("Client {name} state: {msg}".format(
-#                     name=name, msg=status_message))
-#                 statuses[name] = reply.arguments[1] == "ok"
-#             passes = [success for name, success in statuses.items()]
-#             if all(passes):
-#                 req.reply("ok", "ok")
-#             else:
-#                 # some policy for degradation needs to be determined based on
-#                 # overall instrument capability. Maybe fraction of beams x
-#                 # bandwidth?
-#                 fail_count = len(passes) - sum(passes)
-#                 if fail_count > 1:
-#                     req.reply("ok", "fail")
-#                 else:
-#                     req.reply("ok", "degraded")
-
-#         self.ioloop.add_callback(status_handler)
-#         raise AsyncReply
