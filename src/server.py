@@ -167,7 +167,7 @@ ___,-| |----''    / |         `._`-.          `----
             log.error("Failed to publish to {}".format(channel))
 
     @request(Str(), Str(), Int(), Str(), Str())
-    @return_reply(Str())
+    @return_reply()
     def request_configure(self, req, product_id, antennas_csv, \
                 n_channels, streams_json, proxy_name):
         """Receive metadata for upcoming observation.
@@ -256,12 +256,12 @@ ___,-| |----''    / |         `._`-.          `----
             self._write_pair_redis("current:obs:metadata", product_id)
             self._write_pair_redis(product_id, repr((streams_json)))
             self._publish_to_redis(self.REDIS_CHANNELS.alerts, "configure")
-            return ("ok", "")
+            return ("ok",)
         except Exception as e:
             return ("fail", e)
 
     @request(Str())
-    @return_reply(Str())
+    @return_reply()
     def request_capture_init(self, req, product_id):
         """Signals that an observation will start soon
         
@@ -274,10 +274,10 @@ ___,-| |----''    / |         `._`-.          `----
         """
         msg = "capture-init:{}".format(product_id)
         self._publish_to_redis(self.REDIS_CHANNELS.alerts, msg)
-        return ("ok", "")
+        return ("ok",)
 
     @request(Str())
-    @return_reply(Str())
+    @return_reply()
     def request_capture_start(self, req, product_id):
         """Signals that an observation is starting now
         
@@ -290,10 +290,10 @@ ___,-| |----''    / |         `._`-.          `----
         """
         msg = "capture-start:{}".format(product_id)
         self._publish_to_redis(self.REDIS_CHANNELS.alerts, msg)
-        return ("ok", "")
+        return ("ok",)
 
     @request(Str())
-    @return_reply(Str())
+    @return_reply()
     def request_capture_done(self, req, product_id):
         """Signals that an observation has finished
         
@@ -306,10 +306,10 @@ ___,-| |----''    / |         `._`-.          `----
         """
         msg = "capture-done:{}".format(product_id)
         self._publish_to_redis(self.REDIS_CHANNELS.alerts, msg)
-        return ("ok", "")
+        return ("ok",)
 
     @request(Str())
-    @return_reply(Str())
+    @return_reply()
     def request_deconfigure(self, req, product_id):
         """Signals that the current data product is done.
         
@@ -329,7 +329,7 @@ ___,-| |----''    / |         `._`-.          `----
         """
         msg = "deconfigure:{}".format(product_id)
         self._publish_to_redis(self.REDIS_CHANNELS.alerts, msg)
-        return ("ok", "")
+        return ("ok",)
     
     @request(Str())
     @return_reply(Str())

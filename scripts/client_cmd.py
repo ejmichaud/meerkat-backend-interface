@@ -6,7 +6,7 @@ import katcp
 import readline
 from optparse import OptionParser
 from cmd2 import Cmd
-from src.utils import StreamClient
+from reynard.utils import StreamClient
 
 logging.basicConfig(level=logging.INFO,
                     stream=sys.stderr,
