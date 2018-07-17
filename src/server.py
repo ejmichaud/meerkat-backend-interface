@@ -34,7 +34,7 @@ import socket
 import json
 import time
 from tornado.gen import coroutine
-from katcp import AsyncDeviceServer, AsyncReply
+from katcp import Sensor, AsyncDeviceServer, AsyncReply
 from katcp.kattypes import request, return_reply, Int, Str, Discrete
 from katcp.resource_client import KATCPClientResource
 from katcp.ioloop_manager import with_relative_timeout
@@ -44,7 +44,7 @@ import redis
 
 log = logging.getLogger("reynard.ubi_server")
 
-class BLBackendInterface(UniversalBackendInterface):
+class BLBackendInterface(AsyncDeviceServer):
     """Breakthrough Listen's KATCP Server Backend Interface
 
     Attributes:
@@ -54,12 +54,12 @@ class BLBackendInterface(UniversalBackendInterface):
 
     """
 
-    VERSION_INFO = ("breakthrough-katcp-interface", 0, 1)
-    BUILD_INFO = ("breakthrough-katcp-implementation", 0, 1, "rc?")
+    VERSION_INFO = ("BLUSE-katcp-interface", 0, 1)
+    BUILD_INFO = ("BLUSE-katcp-implementation", 0, 1, "rc?")
     DEVICE_STATUSES = ["ok", "fail", "degraded"]
 
     class REDIS_CHANNELS:
-        """The redis channels that I publish to"""
+        """The redis channels that may be published to"""
         alerts = "alerts"
 
 
@@ -294,6 +294,22 @@ ___,-| |----''    / |         `._`-.          `----
 
     @request(Str())
     @return_reply()
+    def request_capture_stop(self, req, product_id):
+        """Signals that an observation is has stopped
+        
+            Publishes a message to the 'alerts' channel of the form:
+                capture-stop:product_id
+            The product_id should match what what was sent in the ?configure request
+
+            This alert should notify all backend processes (such as beamformer)
+            that they should stop collecting data now
+        """
+        msg = "capture-stop:{}".format(product_id)
+        self._publish_to_redis(self.REDIS_CHANNELS.alerts, msg)
+        return ("ok",)
+
+    @request(Str())
+    @return_reply()
     def request_capture_done(self, req, product_id):
         """Signals that an observation has finished
         
@@ -331,6 +347,31 @@ ___,-| |----''    / |         `._`-.          `----
         self._publish_to_redis(self.REDIS_CHANNELS.alerts, msg)
         return ("ok",)
     
+    def setup_sensors(self):
+        """
+        @brief    Set up monitoring sensors.
+
+        @note     The following sensors are made available on top of defaul sensors
+                  implemented in AsynDeviceServer and its base classes.
+
+                  device-status:      Reports the health status of the FBFUSE and associated devices:
+                                      Among other things report HW failure, SW failure and observation failure.
+        """
+        self._device_status = Sensor.discrete(
+            "device-status",
+            description="Health status of BLUSE",
+            params=self.DEVICE_STATUSES,
+            default="ok",
+            initial_status=Sensor.NOMINAL)
+        self.add_sensor(self._device_status)
+
+        self._local_time_synced = Sensor.boolean(
+            "local-time-synced",
+            description="Indicates FBF is NTP syncronised.",
+            default=True,
+            initial_status=Sensor.NOMINAL)
+        self.add_sensor(self._local_time_synced)
+
     @request(Str())
     @return_reply(Str())
     def request_save(self, req, msg):

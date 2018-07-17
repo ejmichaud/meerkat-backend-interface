@@ -21,7 +21,7 @@ if __name__ == "__main__":
     usage = "usage: %prog [options]"
     parser = OptionParser(usage=usage)
     parser.add_option('-p', '--port', dest='port', type=long,
-        help='Port number to bind to', default=8888)
+        help='Port number to bind to', default=5000)
     parser.add_option('', '--log_level',dest='log_level',type=str,
         help='Port number of status server instance',default="INFO")
     parser.add_option('', '--nodeset',dest='nodeset',type=str,
