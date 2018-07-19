@@ -361,7 +361,8 @@ ___,-| |----''    / |         `._`-.          `----
             raise AsyncReply
 
         log.critical("HALTING SERVER!!!")
-        notify_slack("TEST: KATCP server on blh1 (Cape Town) has halted. Might want to check that!")
+        # TODO: uncomment during deploy
+        # notify_slack("KATCP server on blh1 (Cape Town) has halted. Might want to check that!")
         self.ioloop.add_callback(lambda: chain_future(_halt(), f))
         sys.exit(0)
 
