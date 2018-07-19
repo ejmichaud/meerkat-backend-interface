@@ -42,6 +42,7 @@ import redis
 from redis_tools import REDIS_CHANNELS, write_pair_redis, write_list_redis, publish_to_redis
 from slack_tools import notify_slack
 
+# to handle halt request
 from concurrent.futures import Future
 from tornado import gen
 
@@ -341,7 +342,7 @@ ___,-| |----''    / |         `._`-.          `----
         return ("ok", "published: {}".format(msg))
 
     def request_halt(self, req, msg):
-        """Halt the device server.
+        """Halts the server, logs to syslog and slack, and exits the program
         Returns
         -------
         success : {'ok', 'fail'}
@@ -351,6 +352,13 @@ ___,-| |----''    / |         `._`-.          `----
         ::
             ?halt
             !halt ok
+
+        TODO:
+            - Call halt method on superclass to avoid copy paste
+                Doing this caused an issue: 
+                    File "/Users/Eric/Berkeley/seti/packages/meerkat/lib/python2.7/site-packages/katcp/server.py", line 1102, in handle_request
+                        assert (reply.mtype == Message.REPLY)
+                    AttributeError: 'NoneType' object has no attribute 'mtype'
         """
         f = Future()
         @gen.coroutine
@@ -359,11 +367,10 @@ ___,-| |----''    / |         `._`-.          `----
             yield gen.moment
             self.stop(timeout=None)
             raise AsyncReply
-
-        log.critical("HALTING SERVER!!!")
-        # TODO: uncomment during deploy
-        # notify_slack("KATCP server on blh1 (Cape Town) has halted. Might want to check that!")
         self.ioloop.add_callback(lambda: chain_future(_halt(), f))
+        log.critical("HALTING SERVER!!!")
+        # TODO: uncomment when you deploy
+        # notify_slack("KATCP server on blh1 (Cape Town) has halted. Might want to check that!")
         sys.exit(0)
 
     @request()
