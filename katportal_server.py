@@ -6,9 +6,22 @@ import tornado.gen
 from katportalclient import KATPortalClient
 import redis
 
-logger = logging.getLogger('katportalclient.example')
-logger.setLevel(logging.DEBUG)
+logger = logging.getLogger('BLUSE.interface')
 
+SUBARRAY_NUMBER = 2
+HOST = 'monctl.devnmk.camlab.kat.ac.za'
+SENSORS = ['target', 'pos.request-base-ra', 'pos.request-base-dec', 'observer']
+
+def on_update_callback(msg_dict):
+    """Handler for every JSON message published over the websocket."""
+    print "GOT message:"
+    for key, value in msg_dict.items():
+        if key == 'msg_data':
+            print '\tmsg_data:'
+            for data_key, data_value in msg_dict['msg_data'].items():
+                print "\t\t{}: {}".format(data_key, data_value)
+        else:
+            print "\t{}: {}".format(key, value)
 
 @tornado.gen.coroutine
 def main():
@@ -37,46 +50,24 @@ def main():
     # Note: if on_update_callback is set to None, then we cannot use the
     #       KATPortalClient.connect() method (i.e. no websocket access).
     portal_client = KATPortalClient('http://{}/api/client/{}'.
-                                    format(args.host, args.sub_nr),
-                                    on_update_callback=None, logger=logger)
+                                    format(HOST, SUBARRAY_NUMBER),
+                                    on_update_callback=on_update_callback, 
+                                    logger=logger)
 
-    # Get the IDs of schedule blocks assigned to the subarray specified above.
-    sb_ids = yield portal_client.schedule_blocks_assigned()
-    print "\nSchedule block IDs on subarray {}\n{}".format(args.sub_nr, sb_ids)
-    # Example output:
-    #   Schedule block IDs on subarray 1:
-    #   [u'20161010-0001', u'20161010-0002', u'20161010-0003']
+    # First connect to the websocket, before subscribing.
+    yield portal_client.connect()
 
-    # Fetch the details for one of the schedule blocks found.
-    if len(sb_ids) > 0:
-        sb_detail = yield portal_client.schedule_block_detail(sb_ids[0])
-        print "\nDetail for SB {}:\n{}\n".format(sb_ids[0], sb_detail)
+    # Use a namespace with a unique name when subscribing to avoid a
+    # clash with existing namespaces.
+    namespace = 'namespace_' + str(uuid.uuid4())
+
+    # Subscribe to the namespace (async call) - no messages will be received yet,
+    # as this is a new namespace.
+    result = yield portal_client.subscribe(namespace)
+    print "Subscription result: {} identifier(s).".format(result)
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description="Download schedule block info for a subarray and print to stdout.")
-    parser.add_argument(
-        '--host',
-        default='127.0.0.1',
-        help="hostname or IP of the portal server (default: %(default)s).")
-    parser.add_argument(
-        '-s', '--sub_nr',
-        default='1',
-        type=int,
-        help="subarray number (1, 2, 3, or 4) to request schedule for "
-             "(default: %(default)s).")
-    parser.add_argument(
-        '-v', '--verbose',
-        dest='verbose', action="store_true",
-        default=False,
-        help="provide extremely verbose output.")
-    args = parser.parse_args()
-    if args.verbose:
-        logger.setLevel(logging.DEBUG)
-    else:
-        logger.setLevel(logging.WARNING)
-
     # Start up the tornado IO loop.
     # Only a single function to run once, so use run_sync() instead of start()
     io_loop = tornado.ioloop.IOLoop.current()

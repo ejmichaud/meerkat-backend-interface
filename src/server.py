@@ -36,31 +36,50 @@ import time
 from tornado.gen import coroutine
 from katcp import Sensor, AsyncDeviceServer, AsyncReply
 from katcp.kattypes import request, return_reply, Int, Str, Discrete
-from katcp.resource_client import KATCPClientResource
-from katcp.ioloop_manager import with_relative_timeout
+# from katcp.resource_client import KATCPClientResource
+# from katcp.ioloop_manager import with_relative_timeout
 from reynard.utils import pack_dict, unpack_dict
-from reynard.servers.ubi_server import UniversalBackendInterface
+# from reynard.servers.ubi_server import UniversalBackendInterface
 import redis
+from redis_tools import REDIS_CHANNELS, write_pair_redis, write_list_redis, publish_to_redis
 
-log = logging.getLogger("reynard.ubi_server")
+
+log = logging.getLogger("BLUSE.interface")
 
 class BLBackendInterface(AsyncDeviceServer):
     """Breakthrough Listen's KATCP Server Backend Interface
 
-    Attributes:
-        attr1 (str): Description of `attr1`.
-        attr2 (:obj:`int`, optional): Description of `attr2`.
+    This server responds to requests sent from CAM, most notably:
+        @ configue
+        @ capture-init
+        @ capture-start
+        @ capture-stop
+        @ capture-done
+        @ deconfigure
 
+    But because it inherits from AsyncDeviceServer, also responds to:
+        * halt
+        * help
+        * log-level
+        * restart [#restartf1]_
+        * client-list
+        * sensor-list
+        * sensor-sampling
+        * sensor-value
+        * watchdog
+        * version-list (only standard in KATCP v5 or later)
+        * request-timeout-hint (pre-standard only if protocol flags indicates
+                              timeout hints, supported for KATCP v5.1 or later)
+        * sensor-sampling-clear (non-standard)
 
+    TODO:
+        Override halt request to send message to slack, publish to redis,
+        publish to syslog, and stop the whole server process with sys.exit(0)
     """
 
     VERSION_INFO = ("BLUSE-katcp-interface", 0, 1)
     BUILD_INFO = ("BLUSE-katcp-implementation", 0, 1, "rc?")
     DEVICE_STATUSES = ["ok", "fail", "degraded"]
-
-    class REDIS_CHANNELS:
-        """The redis channels that may be published to"""
-        alerts = "alerts"
 
 
     def __init__(self, server_host, server_port):
@@ -106,65 +125,6 @@ ___,-| |----''    / |         `._`-.          `----
             `-.`.
    --'         `;
         """.format("{}.{}".format(self.VERSION_INFO[1], self.VERSION_INFO[2]), self.port))
-
-    def _write_pair_redis(self, key, value):
-        """Creates a key-value pair self.redis_server's redis-server.
-
-        Args:
-            key (str): the key of the key-value pair
-            value (str): the value of the key-value pair
-        
-        Returns:
-            None... but logs either an 'debug' or 'error' message
-        
-        Examples:
-            >>> server = BLBackendInterface('localhost', 5000)
-            >>> server._write_to_redis("aliens:found", "yes")
-        """
-        try:
-            self.redis_server.set(key, value)
-            log.debug("Created redis key/value: {} --> {}".format(key, value))
-        except:
-            log.error("Failed to create redis key/value pair")
-
-    def _write_list_redis(self, key, values):
-        """Creates a new list and rpushes values to it
-
-            If a list already exists at the given key, then
-            delete it and rpush values to a new empty list
-            
-            Args:
-                key (str): key identifying the list
-                values (list): list of values to rpush to redis list
-
-        """
-        if self.redis_server.exists(key):
-            self.redis_server.delete(key)
-        try:
-            self.redis_server.rpush(key, *values)
-            log.debug("Pushed to list: {} --> {}".format(key, values))
-        except:
-            log.error("Failed to rpush to {}".format(channel))
-
-    def _publish_to_redis(self, channel, message):
-        """Publishes a message to a channel in self.redis_server's redis-server.
-
-        Args:
-            channel (str): the name of the channel to publish to
-            message (str): the message to be published
-        
-        Returns:
-            None... but logs either an 'debug' or 'error' message
-        
-        Examples:
-            >>> server = BLBackendInterface('localhost', 5000)
-            >>> server._publish_to_redis("alerts", "Found aliens!!!")
-        """
-        try:
-            self.redis_server.publish(channel, message)
-            log.debug("Published to {} --> {}".format(channel, message))
-        except:
-            log.error("Failed to publish to {}".format(channel))
 
     @request(Str(), Str(), Int(), Str(), Str())
     @return_reply()
@@ -248,14 +208,13 @@ ___,-| |----''    / |         `._`-.          `----
         """
         try:
             antennas_list = antennas_csv.split(",")
-            self._write_pair_redis("{}:timestamp".format(product_id), time.time())
-            self._write_list_redis("{}:antennas".format(product_id), antennas_list)
-            self._write_pair_redis("{}:n_channels".format(product_id), n_channels)
-            self._write_pair_redis("{}:proxy_name".format(product_id), proxy_name)
-            self._write_pair_redis("{}:streams".format(product_id), repr(unpack_dict(streams_json)))
-            self._write_pair_redis("current:obs:metadata", product_id)
-            self._write_pair_redis(product_id, repr((streams_json)))
-            self._publish_to_redis(self.REDIS_CHANNELS.alerts, "configure")
+            write_pair_redis(self.redis_server, "{}:timestamp".format(product_id), time.time())
+            write_list_redis(self.redis_server, "{}:antennas".format(product_id), antennas_list)
+            write_pair_redis(self.redis_server, "{}:n_channels".format(product_id), n_channels)
+            write_pair_redis(self.redis_server, "{}:proxy_name".format(product_id), proxy_name)
+            write_pair_redis(self.redis_server, "{}:streams".format(product_id), repr(unpack_dict(streams_json)))
+            write_pair_redis(self.redis_server, "current:obs:metadata", product_id)
+            publish_to_redis(self.redis_server, REDIS_CHANNELS.alerts, "configure")
             return ("ok",)
         except Exception as e:
             return ("fail", e)
@@ -273,7 +232,7 @@ ___,-| |----''    / |         `._`-.          `----
             to get ready for data
         """
         msg = "capture-init:{}".format(product_id)
-        self._publish_to_redis(self.REDIS_CHANNELS.alerts, msg)
+        publish_to_redis(self.redis_server, REDIS_CHANNELS.alerts, msg)
         return ("ok",)
 
     @request(Str())
@@ -289,7 +248,7 @@ ___,-| |----''    / |         `._`-.          `----
             that they need to be collecting data now
         """
         msg = "capture-start:{}".format(product_id)
-        self._publish_to_redis(self.REDIS_CHANNELS.alerts, msg)
+        publish_to_redis(self.redis_server, REDIS_CHANNELS.alerts, msg)
         return ("ok",)
 
     @request(Str())
@@ -305,7 +264,7 @@ ___,-| |----''    / |         `._`-.          `----
             that they should stop collecting data now
         """
         msg = "capture-stop:{}".format(product_id)
-        self._publish_to_redis(self.REDIS_CHANNELS.alerts, msg)
+        publish_to_redis(self.redis_server, REDIS_CHANNELS.alerts, msg)
         return ("ok",)
 
     @request(Str())
@@ -321,7 +280,7 @@ ___,-| |----''    / |         `._`-.          `----
             that their data streams are ending
         """
         msg = "capture-done:{}".format(product_id)
-        self._publish_to_redis(self.REDIS_CHANNELS.alerts, msg)
+        publish_to_redis(self.redis_server, REDIS_CHANNELS.alerts, msg)
         return ("ok",)
 
     @request(Str())
@@ -344,7 +303,7 @@ ___,-| |----''    / |         `._`-.          `----
             that their data streams are ending
         """
         msg = "deconfigure:{}".format(product_id)
-        self._publish_to_redis(self.REDIS_CHANNELS.alerts, msg)
+        publish_to_redis(self.redis_server, REDIS_CHANNELS.alerts, msg)
         return ("ok",)
     
     def setup_sensors(self):
@@ -367,7 +326,7 @@ ___,-| |----''    / |         `._`-.          `----
 
         self._local_time_synced = Sensor.boolean(
             "local-time-synced",
-            description="Indicates FBF is NTP syncronised.",
+            description="Indicates BLUSE is NTP syncronised.",
             default=True,
             initial_status=Sensor.NOMINAL)
         self.add_sensor(self._local_time_synced)
@@ -377,7 +336,7 @@ ___,-| |----''    / |         `._`-.          `----
     def request_save(self, req, msg):
         """Saves msg to redis channel 'alerts'
         """
-        self._publish_to_redis(self.REDIS_CHANNELS.alerts, msg)
+        publish_to_redis(self.redis_server, REDIS_CHANNELS.alerts, msg)
         return ("ok", "published: {}".format(msg))
 
     @request()

@@ -1,5 +1,6 @@
 import signal
 import sys
+import os
 import tornado
 import logging
 import json
@@ -9,7 +10,7 @@ from src.server import BLBackendInterface
 # from src.effelsberg.config import get_nodes
 import redis
 
-log = logging.getLogger("reynard.ubi_server")
+log = logging.getLogger("BLUSE.interface")
 
 @tornado.gen.coroutine
 def on_shutdown(ioloop, server):
@@ -22,8 +23,6 @@ if __name__ == "__main__":
     parser = OptionParser(usage=usage)
     parser.add_option('-p', '--port', dest='port', type=long,
         help='Port number to bind to', default=5000)
-    parser.add_option('', '--log_level',dest='log_level',type=str,
-        help='Port number of status server instance',default="INFO")
     parser.add_option('', '--nodeset',dest='nodeset',type=str,
         help='Name of the nodeset to use',default="effelsberg")
     (opts, args) = parser.parse_args()
@@ -32,12 +31,15 @@ if __name__ == "__main__":
         print "MissingArgument: Port number"
         sys.exit(-1)
 
-
     FORMAT = "[ %(levelname)s - %(asctime)s - %(filename)s:%(lineno)s] %(message)s"
-    logger = logging.getLogger('reynard')
+    # logger = logging.getLogger('reynard')
     logging.basicConfig(format=FORMAT)
-    logger.setLevel(opts.log_level.upper())
+    log.setLevel(logging.DEBUG)
     log.info("Starting BLBackendInterface instance")
+    syslog_addr = '/dev/log' if os.path.exists('/dev/log') else '/var/run/syslog'
+    handler = logging.handlers.SysLogHandler(address = syslog_addr) 
+    log.addHandler(handler)
+
     ioloop = tornado.ioloop.IOLoop.current()
     server = BLBackendInterface("localhost", opts.port)
     signal.signal(signal.SIGINT, lambda sig, frame: ioloop.add_callback_from_signal(
