@@ -11,7 +11,8 @@ logger = logging.getLogger('BLUSE.interface')
 
 SUBARRAY_NUMBER = 2
 HOST = 'monctl.devnmk.camlab.kat.ac.za'
-SENSORS = ['target', 'pos.request-base-ra', 'pos.request-base-dec', 'observer']
+# SENSORS = ['target', 'pos.request-base-ra', 'pos.request-base-dec', 'observer']
+SENSORS = ['target']
 
 def on_update_callback(msg_dict):
     """Handler for every JSON message published over the websocket."""
@@ -50,8 +51,14 @@ def main():
     # Change URL to point to a valid portal node.  Subarray can be 1 to 4.
     # Note: if on_update_callback is set to None, then we cannot use the
     #       KATPortalClient.connect() method (i.e. no websocket access).
-    portal_client = KATPortalClient('http://{}/api/client/{}'.
-                                    format(HOST, SUBARRAY_NUMBER),
+
+    # portal_client = KATPortalClient('http://{}/api/client/{}'.
+    #                                 format(HOST, SUBARRAY_NUMBER),
+    #                                 on_update_callback=on_update_callback, 
+    #                                 logger=logger)
+
+    portal_client = KATPortalClient('http://{}/api/client/'.
+                                    format(HOST),
                                     on_update_callback=on_update_callback, 
                                     logger=logger)
 
@@ -72,13 +79,15 @@ def main():
     # e.g. any sensor with "mode" in the name.  The response messages will
     # be published to our namespace every 5 seconds.
     result = yield portal_client.set_sampling_strategies(
-        namespace, args.sensors,
-        'period 5.0')
+        namespace, SENSORS,
+        'period 60.0')
     print "\nSet sampling strategies result: {}.\n".format(result)
 
 
 if __name__ == '__main__':
     # Start up the tornado IO loop.
     # Only a single function to run once, so use run_sync() instead of start()
+        # Start up the tornado IO loop:
     io_loop = tornado.ioloop.IOLoop.current()
-    io_loop.run_sync(main)
+    io_loop.add_callback(main)
+    io_loop.start()
