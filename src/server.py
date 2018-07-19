@@ -28,7 +28,7 @@ https://github.com/ewanbarr/reynard
    \-----------------------  
 """
 
-
+import sys
 import logging
 import socket
 import json
@@ -36,13 +36,14 @@ import time
 from tornado.gen import coroutine
 from katcp import Sensor, AsyncDeviceServer, AsyncReply
 from katcp.kattypes import request, return_reply, Int, Str, Discrete
-# from katcp.resource_client import KATCPClientResource
-# from katcp.ioloop_manager import with_relative_timeout
 from reynard.utils import pack_dict, unpack_dict
-# from reynard.servers.ubi_server import UniversalBackendInterface
+
 import redis
 from redis_tools import REDIS_CHANNELS, write_pair_redis, write_list_redis, publish_to_redis
+from slack_tools import notify_slack
 
+from concurrent.futures import Future
+from tornado import gen
 
 log = logging.getLogger("BLUSE.interface")
 
@@ -338,6 +339,31 @@ ___,-| |----''    / |         `._`-.          `----
         """
         publish_to_redis(self.redis_server, REDIS_CHANNELS.alerts, msg)
         return ("ok", "published: {}".format(msg))
+
+    def request_halt(self, req, msg):
+        """Halt the device server.
+        Returns
+        -------
+        success : {'ok', 'fail'}
+            Whether scheduling the halt succeeded.
+        Examples
+        --------
+        ::
+            ?halt
+            !halt ok
+        """
+        f = Future()
+        @gen.coroutine
+        def _halt():
+            req.reply("ok")
+            yield gen.moment
+            self.stop(timeout=None)
+            raise AsyncReply
+
+        log.critical("HALTING SERVER!!!")
+        notify_slack("TEST: KATCP server on blh1 (Cape Town) has halted. Might want to check that!")
+        self.ioloop.add_callback(lambda: chain_future(_halt(), f))
+        sys.exit(0)
 
     @request()
     @return_reply(Str())
