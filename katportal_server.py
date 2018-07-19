@@ -3,6 +3,7 @@
 import logging
 import argparse
 import tornado.gen
+import uuid
 from katportalclient import KATPortalClient
 import redis
 
