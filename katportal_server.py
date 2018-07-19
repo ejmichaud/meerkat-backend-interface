@@ -67,6 +67,15 @@ def main():
     result = yield portal_client.subscribe(namespace)
     print "Subscription result: {} identifier(s).".format(result)
 
+    # Set the sampling strategies for the sensors of interest, on our custom
+    # namespace.  In this example, we are interested in a number of patterns,
+    # e.g. any sensor with "mode" in the name.  The response messages will
+    # be published to our namespace every 5 seconds.
+    result = yield portal_client.set_sampling_strategies(
+        namespace, args.sensors,
+        'period 5.0')
+    print "\nSet sampling strategies result: {}.\n".format(result)
+
 
 if __name__ == '__main__':
     # Start up the tornado IO loop.
