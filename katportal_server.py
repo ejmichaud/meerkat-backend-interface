@@ -52,16 +52,16 @@ def main():
     # Note: if on_update_callback is set to None, then we cannot use the
     #       KATPortalClient.connect() method (i.e. no websocket access).
 
-    # portal_client = KATPortalClient('http://{}/api/client/{}'.
-    #                                 format(HOST, SUBARRAY_NUMBER),
-    #                                 on_update_callback=on_update_callback, 
-    #                                 logger=logger)
+    portal_client = KATPortalClient('http://{}/api/client/{}'.
+                                 format(HOST, SUBARRAY_NUMBER),
+                                 on_update_callback=on_update_callback, 
+                                 logger=logger)
 
-    portal_client = KATPortalClient('http://{}/api/client/'.
-                                    format(HOST),
-                                    on_update_callback=on_update_callback, 
-                                    logger=logger)
-
+#     portal_client = KATPortalClient('http://{}/api/client/'.
+#                                     format(HOST),
+#                                     on_update_callback=on_update_callback, 
+#                                     logger=logger)
+ 
     # First connect to the websocket, before subscribing.
     yield portal_client.connect()
 
@@ -89,5 +89,7 @@ if __name__ == '__main__':
     # Only a single function to run once, so use run_sync() instead of start()
         # Start up the tornado IO loop:
     io_loop = tornado.ioloop.IOLoop.current()
-    io_loop.add_callback(main)
-    io_loop.start()
+    io_loop.run_sync(main)
+#    io_loop.add_callback(main)
+#    io_loop.start()
+
