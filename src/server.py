@@ -206,15 +206,18 @@ ___,-| |----''    / |         `._`-.          `----
             redis-channel: 'alerts' <-- "configure"
         
         Examples:
-            > ?configure array_1_bc856M4k a1,a2,a3,a4 128000 {"stream_type1":{"stream_name1":"stream_address1","stream_name2":"stream_address2"},"stream_type2":{"stream_name1":"stream_address1","stream_name2":"stream_address2"}} BLUSE_3
+            > ?configure array_1_bc856M4k a1,a2,a3,a4 128000 {"cam.http":{"camdata":"http://monctl.devnmk.camlab.kat.ac.za/api/client/2"},"stream_type2":{"stream_name1":"stream_address1","stream_name2":"stream_address2"}} BLUSE_3
         """
         try:
             antennas_list = antennas_csv.split(",")
+            json_dict = unpack_dict(streams_json)
+            cam_url = json_dict['cam.http']['camdata']
             write_pair_redis(self.redis_server, "{}:timestamp".format(product_id), time.time())
             write_list_redis(self.redis_server, "{}:antennas".format(product_id), antennas_list)
             write_pair_redis(self.redis_server, "{}:n_channels".format(product_id), n_channels)
             write_pair_redis(self.redis_server, "{}:proxy_name".format(product_id), proxy_name)
-            write_pair_redis(self.redis_server, "{}:streams".format(product_id), repr(unpack_dict(streams_json)))
+            write_pair_redis(self.redis_server, "{}:streams".format(product_id), repr(json_dict))
+            write_pair_redis(self.redis_server, "{}:cam:url".format(product_id), cam_url)
             write_pair_redis(self.redis_server, "current:obs:metadata", product_id)
             publish_to_redis(self.redis_server, REDIS_CHANNELS.alerts, "configure")
             return ("ok",)
