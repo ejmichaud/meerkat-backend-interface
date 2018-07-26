@@ -219,7 +219,8 @@ ___,-| |----''    / |         `._`-.          `----
             write_pair_redis(self.redis_server, "{}:streams".format(product_id), repr(json_dict))
             write_pair_redis(self.redis_server, "{}:cam:url".format(product_id), cam_url)
             write_pair_redis(self.redis_server, "current:obs:metadata", product_id)
-            publish_to_redis(self.redis_server, REDIS_CHANNELS.alerts, "configure")
+            msg = "configure:{}".format(product_id)
+            publish_to_redis(self.redis_server, REDIS_CHANNELS.alerts, msg)
             return ("ok",)
         except Exception as e:
             return ("fail", e)
