@@ -9,6 +9,9 @@ import redis
 from src.redis_tools import REDIS_CHANNELS
 
 logger = logging.getLogger('BLUSE.interface')
+FORMAT = "[ %(levelname)s - %(asctime)s - %(filename)s:%(lineno)s] %(message)s"
+# logger = logging.getLogger('reynard')
+logging.basicConfig(format=FORMAT)
 
 class BLKATPortalClient(object):
     """Our client server to the Katportal
@@ -39,15 +42,8 @@ class BLKATPortalClient(object):
         2. 
     """
 
-    MSG_TO_FUNCTION = {
-        'configure'     = self._configure,
-        'capture-init'  = self._capture_init,
-        'capture-start' = self._capture_start,
-        'capture-stop'  = self._capture_stop,
-        'capture-done'  = self._capture_done,
-        'deconfigure'   = self._deconfigure
-    }
-
+    VERSION = 0.1
+    
     def __init__(self):
         """Our client server to the Katportal"""
         self.redis_server = redis.StrictRedis()
@@ -55,15 +51,30 @@ class BLKATPortalClient(object):
         self.io_loop = io_loop = tornado.ioloop.IOLoop.current()
         self.subarray_katportals = dict() # indexed by product id's
 
+    def MSG_TO_FUNCTION(self, msg):
+        MSG_TO_FUNCTION_DICT = {
+            'configure'    : self._configure,
+            'capture-init' : self._capture_init,
+            'capture-start': self._capture_start,
+            'capture-stop' : self._capture_stop,
+            'capture-done' : self._capture_done,
+            'deconfigure'  : self._deconfigure
+        }
+        msg_parts = msg['data'].split(':')
+        msg_type = msg_parts[0]
+        return MSG_TO_FUNCTION_DICT.get(msg_type, self._other)
+
     def start(self):
         @tornado.gen.coroutine
         def main():
             self.p.subscribe(REDIS_CHANNELS.alerts)
             for message in self.p.listen():
-                msg_parts = message.split(':')
+                # print ("({}) : {}".format(type(message), message))
+                msg_parts = message['data'].split(':')
                 msg_type = msg_parts[0]
-                MSG_TO_FUNCTION[msg_type](message)
+                self.MSG_TO_FUNCTION(message)(message)
         self.io_loop.add_callback(main)
+        self._print_on_start()
         self.io_loop.start()
 
     def _configure(self, message):
@@ -78,7 +89,7 @@ class BLKATPortalClient(object):
         Examples:
             TODO
         """
-        msg_parts = message.split(':')
+        msg_parts = message['data'].split(':')
         product_id = msg_parts[1] # the element after the configure identifier
         cam_url = self.redis_server.get("{}:{}".format(product_id, 'cam:url'))
         client = KATPortalClient(cam_url, logger=logger)
@@ -97,7 +108,7 @@ class BLKATPortalClient(object):
         Examples:
             TODO
         """
-        msg_parts = message.split(':')
+        msg_parts = message['data'].split(':')
         product_id = msg_parts[1] # the element after the capture-init identifier
         client = self.subarray_katportals[product_id]
         # TODO - get information using the client!
@@ -114,7 +125,7 @@ class BLKATPortalClient(object):
         Examples:
             TODO
         """
-        msg_parts = message.split(':')
+        msg_parts = message['data'].split(':')
         product_id = msg_parts[1] # the element after the capture-start identifier
         client = self.subarray_katportals[product_id]
         # TODO - get information using the client!
@@ -131,7 +142,7 @@ class BLKATPortalClient(object):
         Examples:
             TODO
         """
-        msg_parts = message.split(':')
+        msg_parts = message['data'].split(':')
         product_id = msg_parts[1] # the element after the capture-stop identifier
         client = self.subarray_katportals[product_id]
         # TODO - get information using the client!
@@ -148,7 +159,7 @@ class BLKATPortalClient(object):
         Examples:
             TODO
         """
-        msg_parts = message.split(':')
+        msg_parts = message['data'].split(':')
         product_id = msg_parts[1] # the element after the capture-done identifier
         client = self.subarray_katportals[product_id]
         # TODO - get information using the client!
@@ -165,13 +176,55 @@ class BLKATPortalClient(object):
         Examples:
             TODO
         """
-        msg_parts = message.split(':')
+        msg_parts = message['data'].split(':')
         product_id = msg_parts[1] # the element after the deconfigure identifier
         if product_id not in self.subarray_katportals:
-            logger.WARNING("Failed to deconfigure a non-existent product_id: {}".format(product_id))
+            logger.warning("Failed to deconfigure a non-existent product_id: {}".format(product_id))
         else:
             self.subarray_katportals.pop(product_id)
-            logger.INFO("Deleted KATPortalClient instance for product_id: {}".format(product_id))
+            logger.info("Deleted KATPortalClient instance for product_id: {}".format(product_id))
+
+    def _other(self, message):
+        """Is called when an unrecognized request is sent
+
+        Args:
+            message (str): the message sent over the alerts redis channel
+
+        Returns:
+            None, but does many things!
+
+        Examples:
+            TODO
+        """
+        logger.warning("Unrecognized alert : {}".format(message['data']))
+
+    def _print_on_start(self):
+        print (R"""
+       ________________________________
+      /                                "-_
+     /      .  |  .                       \
+    /      : \ | / :                       \
+   /        '-___-'                         \
+  /_________________________________________ \
+       _______| |________________________--""-L
+      /       F J                              \
+     /       F   J                              L
+    /      :'     ':                            F
+   /        '-___-'                            /
+  /_________________________________________--"
++-------------------------------------------------+
+|                                                 |
+|              Breakthrough Listen's              |
+|                                                 |
+|                KATPortal Client                 |
+|                                                 |
+|                 Version: {}                     |
+|                                                 |
+|  github.com/ejmichaud/meerkat-backend-interface |
+|                                                 |
++-------------------------------------------------+
+""".format(self.VERSION))
+
 
 
 if __name__ == '__main__':
