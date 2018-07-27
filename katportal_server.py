@@ -5,6 +5,7 @@ import argparse
 import tornado.gen
 import uuid
 from katportalclient import KATPortalClient
+from katportalclient.client import SensorNotFoundError
 import redis
 from src.redis_tools import REDIS_CHANNELS
 
@@ -39,10 +40,11 @@ class BLKATPortalClient(object):
 
     TODO:
         1. add io_loop usage on main function calls
-        2. 
+        2. add support for querying schedule blocks 
     """
 
     VERSION = 0.1
+    SENSOR_EXPRESSIONS = ["target"]
     
     def __init__(self):
         """Our client server to the Katportal"""
@@ -65,19 +67,23 @@ class BLKATPortalClient(object):
         return MSG_TO_FUNCTION_DICT.get(msg_type, self._other)
 
     def start(self):
-        @tornado.gen.coroutine
         def main():
             self.p.subscribe(REDIS_CHANNELS.alerts)
             for message in self.p.listen():
-                # print ("({}) : {}".format(type(message), message))
+                print ("({}) : {}".format(type(message), message))
                 msg_parts = message['data'].split(':')
-                msg_type = msg_parts[0]
-                self.MSG_TO_FUNCTION(message)(message)
-        self.io_loop.add_callback(main)
+		print (msg_parts)
+		msg_type = msg_parts[0]
+		self.message = message		
+		func = self.MSG_TO_FUNCTION(message)
+		self.io_loop.run_sync(func)
+        # self.io_loop.add_callback(main)
         self._print_on_start()
-        self.io_loop.start()
+        # self.io_loop.start()
+	main()
 
-    def _configure(self, message):
+    @tornado.gen.coroutine
+    def _configure(self):
         """Responds to configure request
 
         Args:
@@ -89,14 +95,17 @@ class BLKATPortalClient(object):
         Examples:
             TODO
         """
+	message = self.message
         msg_parts = message['data'].split(':')
         product_id = msg_parts[1] # the element after the configure identifier
         cam_url = self.redis_server.get("{}:{}".format(product_id, 'cam:url'))
-        client = KATPortalClient(cam_url, logger=logger)
+        client = KATPortalClient(cam_url, 
+			on_update_callback=None, logger=logger)
         self.subarray_katportals[product_id] = client
         # TODO - get information?
 
-    def _capture_init(self, message):
+    @tornado.gen.coroutine
+    def _capture_init(self):
         """Responds to capture-init request
 
         Args:
@@ -108,10 +117,26 @@ class BLKATPortalClient(object):
         Examples:
             TODO
         """
+	message = self.message
+        print ("init function ran")
+	logger.critical("Init function ran")
         msg_parts = message['data'].split(':')
         product_id = msg_parts[1] # the element after the capture-init identifier
         client = self.subarray_katportals[product_id]
-        # TODO - get information using the client!
+        sensor_names = yield client.sensor_names(self.SENSOR_EXPRESSIONS)
+	print (sensor_names)
+	if len(sensor_names) == 0:
+            logger.warning("No matching sensors found!")
+    	else:
+            for sensor_name in sensor_names:
+            	try:
+                    sensor_value = yield client.sensor_value(sensor_name,
+                                                                include_value_ts=True)
+                    logger.info("\nValue for sensor {} --> {}".format(sensor_name, sensor_value))
+                except SensorNotFoundError as exc:
+                    print "\n", exc
+                    continue
+	# TODO - get more information using the client?
 
     def _capture_start(self, message):
         """Responds to capture-start request
