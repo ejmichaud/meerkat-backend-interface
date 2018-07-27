@@ -67,20 +67,18 @@ class BLKATPortalClient(object):
         return MSG_TO_FUNCTION_DICT.get(msg_type, self._other)
 
     def start(self):
-        def main():
-            self.p.subscribe(REDIS_CHANNELS.alerts)
-            for message in self.p.listen():
-                print ("({}) : {}".format(type(message), message))
-                msg_parts = message['data'].split(':')
-		print (msg_parts)
-		msg_type = msg_parts[0]
-		self.message = message		
-		func = self.MSG_TO_FUNCTION(message)
-		self.io_loop.run_sync(func)
-        # self.io_loop.add_callback(main)
+        self.p.subscribe(REDIS_CHANNELS.alerts)
         self._print_on_start()
-        # self.io_loop.start()
-	main()
+        for message in self.p.listen():
+            print ("({}) : {}".format(type(message), message))
+            msg_parts = message['data'].split(':')
+            print (msg_parts)
+            msg_type = msg_parts[0]
+            self.message = message      
+            func = self.MSG_TO_FUNCTION(message)
+            self.io_loop.run_sync(func)
+            # self.io_loop.add_callback(main)
+            # self.io_loop.start()
 
     @tornado.gen.coroutine
     def _configure(self):
@@ -95,12 +93,12 @@ class BLKATPortalClient(object):
         Examples:
             TODO
         """
-	message = self.message
+        message = self.message
         msg_parts = message['data'].split(':')
         product_id = msg_parts[1] # the element after the configure identifier
         cam_url = self.redis_server.get("{}:{}".format(product_id, 'cam:url'))
         client = KATPortalClient(cam_url, 
-			on_update_callback=None, logger=logger)
+            on_update_callback=None, logger=logger)
         self.subarray_katportals[product_id] = client
         # TODO - get information?
 
@@ -120,24 +118,26 @@ class BLKATPortalClient(object):
 	message = self.message
         print ("init function ran")
 	logger.critical("Init function ran")
-        msg_parts = message['data'].split(':')
-        product_id = msg_parts[1] # the element after the capture-init identifier
-        client = self.subarray_katportals[product_id]
-        sensor_names = yield client.sensor_names(self.SENSOR_EXPRESSIONS)
+	msg_parts = message['data'].split(':')
+	product_id = msg_parts[1] # the element after the capture-init identifier
+	client = self.subarray_katportals[product_id]
+	sensor_names = yield client.sensor_names(self.SENSOR_EXPRESSIONS)
 	print (sensor_names)
 	if len(sensor_names) == 0:
-            logger.warning("No matching sensors found!")
-    	else:
-            for sensor_name in sensor_names:
-            	try:
-                    sensor_value = yield client.sensor_value(sensor_name,
-                                                                include_value_ts=True)
-                    logger.info("\nValue for sensor {} --> {}".format(sensor_name, sensor_value))
-                except SensorNotFoundError as exc:
-                    print "\n", exc
-                    continue
-	# TODO - get more information using the client?
+	    logger.warning("No matching sensors found!")
+	else:
+	    for sensor_name in sensor_names:
+	        try:
+	            sensor_value = yield client.sensor_value(sensor_name,
+	                                                        include_value_ts=True)
+	            logger.info("\nValue for sensor {} --> {}".format(sensor_name, sensor_value))
+	    print ("\nValue for sensor {} --> {}".format(sensor_name, sensor_value))
+	        except SensorNotFoundError as exc:
+	            print "\n", exc
+	            continue
+	    # TODO - get more information using the client?
 
+    @tornado.gen.coroutine
     def _capture_start(self, message):
         """Responds to capture-start request
 
@@ -155,6 +155,7 @@ class BLKATPortalClient(object):
         client = self.subarray_katportals[product_id]
         # TODO - get information using the client!
 
+    @tornado.gen.coroutine
     def _capture_stop(self, message):
         """Responds to capture-stop request
 
@@ -172,6 +173,7 @@ class BLKATPortalClient(object):
         client = self.subarray_katportals[product_id]
         # TODO - get information using the client!
 
+    @tornado.gen.coroutine
     def _capture_done(self, message):
         """Responds to capture-done request
 
@@ -189,6 +191,7 @@ class BLKATPortalClient(object):
         client = self.subarray_katportals[product_id]
         # TODO - get information using the client!
 
+    @tornado.gen.coroutine
     def _deconfigure(self, message):
         """Responds to deconfigure request
 
