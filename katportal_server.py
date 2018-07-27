@@ -115,27 +115,27 @@ class BLKATPortalClient(object):
         Examples:
             TODO
         """
-	message = self.message
+        message = self.message
         print ("init function ran")
-	logger.critical("Init function ran")
-	msg_parts = message['data'].split(':')
-	product_id = msg_parts[1] # the element after the capture-init identifier
-	client = self.subarray_katportals[product_id]
-	sensor_names = yield client.sensor_names(self.SENSOR_EXPRESSIONS)
-	print (sensor_names)
-	if len(sensor_names) == 0:
-	    logger.warning("No matching sensors found!")
-	else:
-	    for sensor_name in sensor_names:
-	        try:
-	            sensor_value = yield client.sensor_value(sensor_name,
-	                                                        include_value_ts=True)
-	            logger.info("\nValue for sensor {} --> {}".format(sensor_name, sensor_value))
-	    print ("\nValue for sensor {} --> {}".format(sensor_name, sensor_value))
-	        except SensorNotFoundError as exc:
-	            print "\n", exc
-	            continue
-	    # TODO - get more information using the client?
+        logger.critical("Init function ran")
+        msg_parts = message['data'].split(':')
+        product_id = msg_parts[1] # the element after the capture-init identifier
+        client = self.subarray_katportals[product_id]
+        sensor_names = yield client.sensor_names(self.SENSOR_EXPRESSIONS)
+        print (sensor_names)
+        if len(sensor_names) == 0:
+            logger.warning("No matching sensors found!")
+        else:
+            for sensor_name in sensor_names:
+                try:
+                    sensor_value = yield client.sensor_value(sensor_name,
+                                                                include_value_ts=True)
+                    logger.info("\nValue for sensor {} --> {}".format(sensor_name, sensor_value))
+                    print ("\nValue for sensor {} --> {}".format(sensor_name, sensor_value))
+                except SensorNotFoundError as exc:
+                    print "\n", exc
+                    continue
+            # TODO - get more information using the client?
 
     @tornado.gen.coroutine
     def _capture_start(self, message):
