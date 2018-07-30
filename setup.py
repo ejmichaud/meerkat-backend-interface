@@ -20,7 +20,6 @@ setup(
             "ipaddress==1.0.22",
             "Jinja2==2.10",
             "katcp==0.6.2",
-            "katportalclient==0.1.dev245+master.669e018",
             "lxml==4.2.3",
             "MarkupSafe==1.0",
             "omnijson==0.1.2",
@@ -31,7 +30,6 @@ setup(
             "pyperclip==1.6.2",
             "redis==2.10.6",
             "requests==2.19.1",
-            "reynard==0.1",
             "singledispatch==3.4.0.3",
             "six==1.11.0",
             "slacker==0.9.65",
@@ -44,6 +42,9 @@ setup(
             "websocket-client==0.48.0",
             "yarg==0.1.9"	
 	],
+	dependency_links=[
+        "git+https://github.com/ska-sa/katportalclient"
+        ],
 	author='Eric J. Michaud',
 	license='MIT',
 	url='https://github.com/ejmichaud/meerkat-backend-interface',

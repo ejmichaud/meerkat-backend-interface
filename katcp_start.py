@@ -6,7 +6,7 @@ import logging
 import json
 import socket
 from optparse import OptionParser
-from src.server import BLBackendInterface
+from src.katcp_server import BLBackendInterface
 # from src.effelsberg.config import get_nodes
 import redis
 
