@@ -254,15 +254,6 @@ class BLKATPortalClient(object):
 """.format(self.VERSION))
 
 
-
-if __name__ == '__main__':
-    client = BLKATPortalClient()
-    client.start()
-
-
-
-
-
 #############################################################
 #                   Other / Scratch Work
 #############################################################

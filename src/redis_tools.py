@@ -25,8 +25,10 @@ def write_pair_redis(server, key, value):
     try:
         server.set(key, value)
         log.debug("Created redis key/value: {} --> {}".format(key, value))
+        return True
     except:
         log.error("Failed to create redis key/value pair")
+        return False
 
 def write_list_redis(server, key, values):
     """Creates a new list and rpushes values to it
@@ -40,13 +42,15 @@ def write_list_redis(server, key, values):
             values (list): list of values to rpush to redis list
 
     """
-    if server.exists(key):
-        server.delete(key)
     try:
+        if server.exists(key):
+            server.delete(key)
         server.rpush(key, *values)
         log.debug("Pushed to list: {} --> {}".format(key, values))
+        return True
     except:
-        log.error("Failed to rpush to {}".format(channel))
+        log.error("Failed to rpush to {}".format(key))
+        return False
 
 def publish_to_redis(server, channel, message):
     """Publishes a message to a channel in self.redis_server's redis-server.
@@ -66,5 +70,7 @@ def publish_to_redis(server, channel, message):
     try:
         server.publish(channel, message)
         log.debug("Published to {} --> {}".format(channel, message))
+        return True
     except:
-        log.error("Failed to publish to {}".format(channel))
+        log.error("Failed to publish to {} --> {}".format(channel, message))
+        return False

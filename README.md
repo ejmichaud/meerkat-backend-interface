@@ -94,13 +94,50 @@ System that selects targets from and forms pencil-beams to observe them. NOT YET
 ### Real-time Signal Detection and Data Storage
 Our signal detection and data storage systems.
 
+## Installation Instructions
+
+First, make sure to [install redis](https://redis.io/topics/quickstart). If it's installed, you should be able to start it by executing:
+```
+$ redis-server
+```
+Next, download the repository like so:
+```
+$ git clone --recurse-submodules https://github.com/ejmichaud/meerkat-backend-interface
+```
+And enter the repository with 
+```
+$ cd meerkat-backend-interface
+```
+Next, create a Python 2 virual environment like so:
+```
+virtualenv -p /usr/bin/python venv
+```
+Now, simply activate your virtual environment and install the package like so:
+```
+$ source venv/bin/activate
+(venv)$ pip install .
+```
+This will install all dependencies.
+
+## Usage
+Simply start both modules like so:
+```
+(venv)$ python katcp_start.py
+```
+Which will run the server locally on port 5000, and:
+```
+(venv)$ python katportal_start.py
+```
+Which will start the katportal querying system.
+
+Both of these processes need to be running to properly acquire all observational metadata.
+
 ## Questions:
 
 1. In [1], Siemion et al. say that the "SETI Search Subsystem" will detect candidate signals in **real time**. What needs to happen from a software perspective for this to happen? Will those processes be started and monitored from my system, or from something lower in the stack?
 2. A **significant task** seems to be the design of the software-based beamforming/interferometry systems. In [1], Siemion et al. say that our system will start with a single beam and then upgrade from there. Do we still plan on scaling this way? If so, do we intend on writing the software now that will support the multi-beam observing when it comes online? Will the system that we are building now be sufficiently general to handle all sub-array sizes and beam configurations going forward?
 3. In [1], Siemion et al. write that "A small amount of observing time or follow up observations, 5-10 hours per month, would significantly improve the speed and productivity of the commensal program." What kind of human interface do we need to build in order to accomodate these observations? Will these targets be selected manually (in contrast to the automated "scheduling" system that will do most of our commensal observing)?
 4. **Will this same software be used on the SKA? (approx. 2022?)**
-
 
 ## References
 

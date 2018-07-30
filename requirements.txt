@@ -14,8 +14,10 @@ idna==2.7
 ipaddress==1.0.22
 Jinja2==2.10
 katcp==0.6.2
+katportalclient==0.1.dev245+master.669e018
 lxml==4.2.3
 MarkupSafe==1.0
+omnijson==0.1.2
 pipreqs==0.4.9
 ply==3.11
 psutil==5.4.6
@@ -26,9 +28,12 @@ requests==2.19.1
 reynard==0.1
 singledispatch==3.4.0.3
 six==1.11.0
+slacker==0.9.65
 subprocess32==3.5.2
 tornado==4.5.3
+ujson==1.35
 urllib3==1.23
 wcwidth==0.1.7
+weather-api==1.0.4
 websocket-client==0.48.0
 yarg==0.1.9
