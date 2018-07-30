@@ -115,7 +115,7 @@ virtualenv -p /usr/bin/python venv
 Now, simply activate your virtual environment and install the package like so:
 ```
 $ source venv/bin/activate
-(venv)$ pip install .
+(venv)$ pip install -r requirements.txt
 ```
 This will install all dependencies.
 
