@@ -123,7 +123,7 @@ pip install -r requirements.txt
 This will install all dependencies, and you will be ready to start up the modules.
 
 ## Usage
-Simply start both modules like so:
+After starting redis on port 6379, simply start both modules like so:
 ```
 (venv)$ python katcp_start.py
 ```
