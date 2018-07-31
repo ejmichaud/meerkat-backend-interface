@@ -124,7 +124,7 @@ class BLKATPortalClient(object):
             blocks.append(block)
         # TODO: do something interesting with schedule blocks
         if blocks:
-            print (blocks):
+            print (blocks)
         else:
             print ("Found no schedule blocks")
 
@@ -154,13 +154,11 @@ class BLKATPortalClient(object):
                     sensor_value = yield client.sensor_value(sensor_name,
                                                                 include_value_ts=True)
                     sensors_and_values[sensor_name] = sensor_value
-                    logger.info("\nValue for sensor {} --> {}".format(sensor_name, sensor_value))
-                    print ("\nValue for sensor {} --> {}".format(sensor_name, sensor_value))
                 except SensorNotFoundError as exc:
                     print "\n", exc
                     continue
             # TODO - get more information using the client?
-        return sensors_and_values
+        raise tornado.gen.Return(sensors_and_values)
 
 
     @tornado.gen.coroutine
