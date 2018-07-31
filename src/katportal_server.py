@@ -90,13 +90,16 @@ class BLKATPortalClient(object):
                 # do stuff
             elif msg_type == 'capture-start':
                 # do stuff
+                pass
             elif msg_type == 'capture-stop':
                 # do stuff
+                pass
             elif msg_type == 'capture-done':
                 print ("received capture-done message")
                 # do stuff
             elif msg_type == 'deconfigure':
                 # do stuff
+                pass
             else:
                 print ("Unrecognized Alert Message... no queries made")      
             
