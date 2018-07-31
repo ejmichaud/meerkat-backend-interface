@@ -358,6 +358,13 @@ ___,-| |----''    / |         `._`-.          `----
             initial_status=Sensor.NOMINAL)
         self.add_sensor(self._local_time_synced)
 
+        self._version = Sensor.string(
+            "version",
+            description="Reports the current BLUSE version",
+            default=str(self.VERSION_INFO[1:]).strip('()').replace(' ', '').replace(",", '.'),
+            initial_status=Sensor.NOMINAL)
+        self.add_sensor(self._version)
+
     @request(Str())
     @return_reply(Str())
     def request_save(self, req, msg):
