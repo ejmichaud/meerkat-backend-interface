@@ -70,95 +70,37 @@ class BLKATPortalClient(object):
         self.p.subscribe(REDIS_CHANNELS.alerts)
         self._print_start_image()
         for message in self.p.listen():
+            print ("({}) : {}".format(type(message), message))
             msg_parts = message['data'].split(':')
-            if len(msg_parts) != 2:
-                print ("Not processing this message --> {}".format(message))
-                continue
+            print (msg_parts)
             msg_type = msg_parts[0]
-            product_id = msg_parts[1]
-            if msg_type == 'configure':
-                cam_url = self.redis_server.get("{}:{}".format(product_id, 'cam:url'))
-                client = KATPortalClient(cam_url, 
-                            on_update_callback=None, logger=logger)
-                self.subarray_katportals[product_id] = client
-                print ("Created katportalclient object : {}".format(product_id))
-                # get data?
-            elif msg_type == 'capture-init':
-                self.io_loop.run_sync(lambda: self._get_future_targets(product_id))
-                sensors_and_values = self.io_loop.run_sync(lambda: self._get_sensor_values(product_id, self.SENSOR_EXPRESSIONS))
-                print (sensors_and_values)
-                # do stuff
-            elif msg_type == 'capture-start':
-                # do stuff
-            elif msg_type == 'capture-stop':
-                # do stuff
-            elif msg_type == 'capture-done':
-                print ("received capture-done message")
-                # do stuff
-            elif msg_type == 'deconfigure':
-                # do stuff
-            else:
-                print ("Unrecognized Alert Message... no queries made")      
-            
+            self.message = message      
+            func = self.MSG_TO_FUNCTION(message)
+            self.io_loop.run_sync(func)
+            # self.io_loop.add_callback(main)
+            # self.io_loop.start()
+
     @tornado.gen.coroutine
-    def _get_future_targets(self, product_id):
-        """Gets the schedule blocks of the product_id's subarray
+    def _configure(self):
+        """Responds to configure request
 
         Args:
-            product_id (str): the product id of a currently activated subarray
+            message (str): the message sent over the alerts redis channel
 
         Returns:
+            None, but does many things!
+
+        Examples:
             TODO
-
-        Examples:
-            >>> self.io_loop.run_sync(lambda: self._get_future_targets(product_id))
         """
-        client = self.subarray_katportals[product_id]
-        sb_ids = yield client.schedule_blocks_assigned()
-        blocks = []
-        for sb_id in sb_ids:
-            block = yield portal_client.future_targets(sb_id)
-            blocks.append(block)
-        # TODO: do something interesting with schedule blocks
-        if blocks:
-            print (blocks):
-        else:
-            print ("Found no schedule blocks")
-
-    @tornado.gen.coroutine
-    def _get_sensor_values(self, product_id, targets):
-        """Gets sensor values associated with the product_id's subarray
-
-        Args:
-            product_id (str): the product id of a currently activated subarray
-            targets (list): expressions to look for in sensor names
-
-        Returns:
-            A dictionary of sensor-name / value pairs
-
-        Examples:
-            >>> self.io_loop.run_sync(lambda: self._get_sensor_values(product_id, ["target", "ra", "dec"]))
-        """
-        client = self.subarray_katportals[product_id]
-        sensor_names = yield client.sensor_names(self.SENSOR_EXPRESSIONS)
-        sensors_and_values = dict()
-        print (sensor_names)
-        if len(sensor_names) == 0:
-            logger.warning("No matching sensors found!")
-        else:
-            for sensor_name in sensor_names:
-                try:
-                    sensor_value = yield client.sensor_value(sensor_name,
-                                                                include_value_ts=True)
-                    sensors_and_values[sensor_name] = sensor_value
-                    logger.info("\nValue for sensor {} --> {}".format(sensor_name, sensor_value))
-                    print ("\nValue for sensor {} --> {}".format(sensor_name, sensor_value))
-                except SensorNotFoundError as exc:
-                    print "\n", exc
-                    continue
-            # TODO - get more information using the client?
-        return sensors_and_values
-
+        message = self.message
+        msg_parts = message['data'].split(':')
+        product_id = msg_parts[1] # the element after the configure identifier
+        cam_url = self.redis_server.get("{}:{}".format(product_id, 'cam:url'))
+        client = KATPortalClient(cam_url, 
+            on_update_callback=None, logger=logger)
+        self.subarray_katportals[product_id] = client
+        # TODO - get information?
 
     @tornado.gen.coroutine
     def _capture_init(self):
