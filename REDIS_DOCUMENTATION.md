@@ -26,20 +26,21 @@ The url used by the `Katportal Client` module to query additional metadata for t
 A repr string for a python dictionary that contains different URL's for the different types of raw data that are produced in the current observation being conducted on the given product_id's subarray. To recover convert this string to a python dictionary, simply call `eval(<repr string>)`, and it will return a python dictionary object. This dictionary will look something like this:
 ```
 {
-	"cam.http":
-		{"camdata":"http://monctl.devnmk.camlab.kat.ac.za/api/client/2"},
-	"stream_type1":
-		{
-			"stream_name1":"stream_address1",
-			"stream_name2":"stream_address2"
-		}
-	}
-	"stream_type2":
-		{
-			"stream_name1":"stream_address1",
-			"stream_name2":"stream_address2"
-		}
-	}
+    "cam.http":
+        {"camdata":"http://monctl.devnmk.camlab.kat.ac.za/api/client/2"},
+    "stream_type1":
+        {
+            "stream_name1":"stream_address1",
+            "stream_name2":"stream_address2"
+        }
+    }
+    "stream_type2":
+        {
+            "stream_name1":"stream_address1",
+            "stream_name2":"stream_address2"
+        }
+    }
+}
 ```
 It may contain:
 * One CAM stream, with type cam.http. The camdata stream provides the connection string for katportalclient (for the subarray that this BLUSE instance is being configured on). This is the same as the `[product_id]:cam:url` value in the redis database.
