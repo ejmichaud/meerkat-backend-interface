@@ -28,7 +28,7 @@ class BLKATPortalClient(object):
 
     When start() is called, a loop starts that subscribes to the 'alerts'
     channel of the Redis server. Depending on the message received, various
-    processes are run (asynchronously?). This include:
+    processes are run (asynchronously?). These include:
         1. Creating a new KATPortalClient object specific to the
             product id we just received in a ?configure request
         2. Querying for target information when ?capture-init is 
@@ -98,11 +98,13 @@ class BLKATPortalClient(object):
                 print ("received capture-done message")
                 # do stuff
             elif msg_type == 'deconfigure':
-                # do stuff
-                pass
+                if product_id not in self.subarray_katportals:
+                    logger.warning("Failed to deconfigure a non-existent product_id: {}".format(product_id))
+                else:
+                    self.subarray_katportals.pop(product_id)
+                    logger.info("Deleted KATPortalClient instance for product_id: {}".format(product_id))
             else:
-                print ("Unrecognized Alert Message... no queries made")      
-            
+                print ("Unrecognized Alert Message... no queries made")
     @tornado.gen.coroutine
     def _get_future_targets(self, product_id):
         """Gets the schedule blocks of the product_id's subarray
@@ -312,81 +314,3 @@ class BLKATPortalClient(object):
 +-------------------------------------------------+
 """.format(self.VERSION))
 
-
-#############################################################
-#                   Other / Scratch Work
-#############################################################
-
-SUBARRAY_NUMBER = 2
-HOST = 'monctl.devnmk.camlab.kat.ac.za'
-# SENSORS = ['target', 'pos.request-base-ra', 'pos.request-base-dec', 'observer']
-SENSORS = ['target']
-
-def on_update_callback(msg_dict):
-    """Handler for every JSON message published over the websocket."""
-    print "GOT message:"
-    for key, value in msg_dict.items():
-        if key == 'msg_data':
-            print '\tmsg_data:'
-            for data_key, data_value in msg_dict['msg_data'].items():
-                print "\t\t{}: {}".format(data_key, data_value)
-        else:
-            print "\t{}: {}".format(key, value)
-
-@tornado.gen.coroutine
-def main():
-    """ This function will do all the work. 
-
-    It will:
-        -Query redis database for subarray number info
-        -Establish KATPortalClient Connections and
-        subscribe to appropriate messages
-        -Periodically query KATPortalClients for schedule block info
-        -Publish this info to the redis database
-
-    Args:
-        None
-
-    Returns:
-        None
-
-    Example:
-        >>> io_loop = tornado.ioloop.IOLoop.current()
-        >>> io_loop.run_sync(main)
-    """
-
-    # Here is an example of requesting schedule block info:
-    # Change URL to point to a valid portal node.  Subarray can be 1 to 4.
-    # Note: if on_update_callback is set to None, then we cannot use the
-    #       KATPortalClient.connect() method (i.e. no websocket access).
-
-    portal_client = KATPortalClient('http://{}/api/client/{}'.
-                                 format(HOST, SUBARRAY_NUMBER),
-                                 on_update_callback=on_update_callback, 
-                                 logger=logger)
-
-#     portal_client = KATPortalClient('http://{}/api/client/'.
-#                                     format(HOST),
-#                                     on_update_callback=on_update_callback, 
-#                                     logger=logger)
- 
-    # First connect to the websocket, before subscribing.
-    yield portal_client.connect()
-
-    # Use a namespace with a unique name when subscribing to avoid a
-    # clash with existing namespaces.
-    namespace = 'namespace_' + str(uuid.uuid4())
-
-    # Subscribe to the namespace (async call) - no messages will be received yet,
-    # as this is a new namespace.
-    result = yield portal_client.subscribe(namespace)
-    print "Subscription result: {} identifier(s).".format(result)
-
-    # Set the sampling strategies for the sensors of interest, on our custom
-    # namespace.  In this example, we are interested in a number of patterns,
-    # e.g. any sensor with "mode" in the name.  The response messages will
-    # be published to our namespace every 5 seconds.
-    result = yield portal_client.set_sampling_strategies(
-        namespace, SENSORS,
-        'period 60.0')
-    print "\nSet sampling strategies result: {}.\n".format(result)
