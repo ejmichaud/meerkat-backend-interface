@@ -16,7 +16,7 @@ def write_pair_redis(server, key, value):
         value (str): the value of the key-value pair
     
     Returns:
-        None... but logs either an 'debug' or 'error' message
+        True if success, False otherwise, and logs either an 'debug' or 'error' message
     
     Examples:
         >>> server = BLBackendInterface('localhost', 5000)
@@ -41,6 +41,9 @@ def write_list_redis(server, key, values):
             key (str): key identifying the list
             values (list): list of values to rpush to redis list
 
+        Returns:
+            True if success, False otherwise, and logs either an 'debug' or 'error' message
+
     """
     try:
         if server.exists(key):
@@ -61,7 +64,7 @@ def publish_to_redis(server, channel, message):
         message (str): the message to be published
     
     Returns:
-        None... but logs either an 'debug' or 'error' message
+        True if success, False otherwise, and logs either an 'debug' or 'error' message
     
     Examples:
         >>> server = BLBackendInterface('localhost', 5000)

@@ -192,7 +192,7 @@ ___,-| |----''    / |         `._`-.          `----
         BLUSE there will only be a single instance of the proxy in a subarray.
 
         Returns:
-            None... but replies with "ok" and logs either info or error
+            None... but replies with "ok" or "fail" and logs either info or error
             
         Writes:
             - subbarry1_abc65555:timestamp" -> "1534657577373.23423"  :: Redis String
@@ -200,7 +200,7 @@ ___,-| |----''    / |         `._`-.          `----
             - subarray1_abc65555:n_channels" -> "4096" :: Redis String
             - subarray1_abc65555:proxy_name "-> "BLUSE_whatever" :: Redis String
             - subarray1_abc65555:streams" -> {....} :: Redis Hash !!!CURRENTLY A STRING!!!
-            - current:obs:metadata -> "subbary1_abc65555"
+            - current:obs:id -> "subbary1_abc65555"
 
         Publishes:
             redis-channel: 'alerts' <-- "configure"
@@ -221,7 +221,7 @@ ___,-| |----''    / |         `._`-.          `----
         statuses.append(write_pair_redis(self.redis_server, "{}:proxy_name".format(product_id), proxy_name))
         statuses.append(write_pair_redis(self.redis_server, "{}:streams".format(product_id), repr(json_dict)))
         statuses.append(write_pair_redis(self.redis_server, "{}:cam:url".format(product_id), cam_url))
-        statuses.append(write_pair_redis(self.redis_server, "current:obs:metadata", product_id))
+        statuses.append(write_pair_redis(self.redis_server, "current:obs:id", product_id))
         msg = "configure:{}".format(product_id)
         statuses.append(publish_to_redis(self.redis_server, REDIS_CHANNELS.alerts, msg))
         if all(statuses):

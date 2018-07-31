@@ -96,28 +96,31 @@ Our signal detection and data storage systems.
 
 ## Installation Instructions
 
-First, make sure to [install redis](https://redis.io/topics/quickstart). If it's installed, you should be able to start it by executing:
+First, make sure to [install redis](https://redis.io/topics/quickstart). If it's installed, you should be able to start it by executing from the terminal:
 ```
-$ redis-server
+redis-server
 ```
 Next, download the repository like so:
 ```
-$ git clone --recurse-submodules https://github.com/ejmichaud/meerkat-backend-interface
+git clone --recurse-submodules https://github.com/ejmichaud/meerkat-backend-interface
 ```
-And enter the repository with 
-```
-$ cd meerkat-backend-interface
-```
-Next, create a Python 2 virual environment like so:
+I'd recommend installing the module within a virtual environment. To create the Python 2 virtual environment:
 ```
 virtualenv -p /usr/bin/python venv
 ```
-Now, simply activate your virtual environment and install the package like so:
+And activate it:
 ```
-$ source venv/bin/activate
-(venv)$ pip install -r requirements.txt
+source venv/bin/activate
 ```
-This will install all dependencies.
+To install, simply `cd` into the repo
+```
+cd meerkat-backend-interface
+```
+And install requirements with pip
+```
+pip install -r requirements.txt
+```
+This will install all dependencies, and you will be ready to start up the modules.
 
 ## Usage
 Simply start both modules like so:
@@ -131,6 +134,9 @@ Which will run the server locally on port 5000, and:
 Which will start the katportal querying system.
 
 Both of these processes need to be running to properly acquire all observational metadata.
+
+## Redis Formatting:
+For redis key formatting and respective value descriptions, see [REDIS_DOCUMENTATION](REDIS_DOCUMENTATION.md)
 
 ## Questions:
 
