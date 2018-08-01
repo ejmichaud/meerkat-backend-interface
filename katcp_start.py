@@ -8,7 +8,6 @@ import socket
 from optparse import OptionParser
 from src.katcp_server import BLBackendInterface
 # from src.effelsberg.config import get_nodes
-import redis
 
 log = logging.getLogger("BLUSE.interface")
 
@@ -37,7 +36,7 @@ if __name__ == "__main__":
     log.setLevel(logging.DEBUG)
     log.info("Starting BLBackendInterface instance")
     syslog_addr = '/dev/log' if os.path.exists('/dev/log') else '/var/run/syslog'
-    handler = logging.handlers.SysLogHandler(address = syslog_addr) 
+    handler = logging.handlers.SysLogHandler(address=syslog_addr) 
     log.addHandler(handler)
 
     ioloop = tornado.ioloop.IOLoop.current()

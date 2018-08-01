@@ -10,9 +10,6 @@ import redis
 from src.redis_tools import REDIS_CHANNELS
 
 logger = logging.getLogger('BLUSE.interface')
-FORMAT = "[ %(levelname)s - %(asctime)s - %(filename)s:%(lineno)s] %(message)s"
-# logger = logging.getLogger('reynard')
-logging.basicConfig(format=FORMAT)
 
 class BLKATPortalClient(object):
     """Our client server to the Katportal
@@ -39,8 +36,8 @@ class BLKATPortalClient(object):
             a ?capture-done request is sent.
 
     TODO:
-        1. add io_loop usage on main function calls
-        2. add support for querying schedule blocks 
+        1. Support thread-safe stopping of ioloop
+        2.  
     """
 
     VERSION = 0.1
@@ -53,7 +50,7 @@ class BLKATPortalClient(object):
         self.io_loop = io_loop = tornado.ioloop.IOLoop.current()
         self.subarray_katportals = dict() # indexed by product id's
 
-    def MSG_TO_FUNCTION(self, msg):
+    def MSG_TO_FUNCTION(self, msg_type):
         MSG_TO_FUNCTION_DICT = {
             'configure'    : self._configure,
             'capture-init' : self._capture_init,
@@ -62,8 +59,6 @@ class BLKATPortalClient(object):
             'capture-done' : self._capture_done,
             'deconfigure'  : self._deconfigure
         }
-        msg_parts = msg['data'].split(':')
-        msg_type = msg_parts[0]
         return MSG_TO_FUNCTION_DICT.get(msg_type, self._other)
 
     def start(self):
@@ -76,35 +71,8 @@ class BLKATPortalClient(object):
                 continue
             msg_type = msg_parts[0]
             product_id = msg_parts[1]
-            if msg_type == 'configure':
-                cam_url = self.redis_server.get("{}:{}".format(product_id, 'cam:url'))
-                client = KATPortalClient(cam_url, 
-                            on_update_callback=None, logger=logger)
-                self.subarray_katportals[product_id] = client
-                print ("Created katportalclient object : {}".format(product_id))
-                # get data?
-            elif msg_type == 'capture-init':
-                self.io_loop.run_sync(lambda: self._get_future_targets(product_id))
-                sensors_and_values = self.io_loop.run_sync(lambda: self._get_sensor_values(product_id, self.SENSOR_EXPRESSIONS))
-                print (sensors_and_values)
-                # do stuff
-            elif msg_type == 'capture-start':
-                # do stuff
-                pass
-            elif msg_type == 'capture-stop':
-                # do stuff
-                pass
-            elif msg_type == 'capture-done':
-                print ("received capture-done message")
-                # do stuff
-            elif msg_type == 'deconfigure':
-                if product_id not in self.subarray_katportals:
-                    logger.warning("Failed to deconfigure a non-existent product_id: {}".format(product_id))
-                else:
-                    self.subarray_katportals.pop(product_id)
-                    logger.info("Deleted KATPortalClient instance for product_id: {}".format(product_id))
-            else:
-                print ("Unrecognized Alert Message... no queries made")
+            self.MSG_TO_FUNCTION(msg_type)(product_id)
+    
     @tornado.gen.coroutine
     def _get_future_targets(self, product_id):
         """Gets the schedule blocks of the product_id's subarray
@@ -162,13 +130,30 @@ class BLKATPortalClient(object):
             # TODO - get more information using the client?
         raise tornado.gen.Return(sensors_and_values)
 
+    def _configure(self, product_id):
+        """Executes when configure request is processed
 
-    @tornado.gen.coroutine
-    def _capture_init(self):
+        Args:
+            product_id (str): the product id given in the ?configure request
+
+        Returns:
+            None
+
+        Examples:
+            >>> 
+        """
+        cam_url = self.redis_server.get("{}:{}".format(product_id, 'cam:url'))
+        client = KATPortalClient(cam_url, 
+                            on_update_callback=None, logger=logger)
+        self.subarray_katportals[product_id] = client
+        logger.info("Created katportalclient object : {}".format(product_id))
+        # get data?
+
+    def _capture_init(self, product_id):
         """Responds to capture-init request
 
         Args:
-            message (str): the message sent over the alerts redis channel
+            product_id (str): the product id given in the ?configure request
 
         Returns:
             None, but does many things!
@@ -176,30 +161,13 @@ class BLKATPortalClient(object):
         Examples:
             TODO
         """
-        message = self.message
-        print ("init function ran")
-        logger.critical("Init function ran")
-        msg_parts = message['data'].split(':')
-        product_id = msg_parts[1] # the element after the capture-init identifier
-        client = self.subarray_katportals[product_id]
-        sensor_names = yield client.sensor_names(self.SENSOR_EXPRESSIONS)
-        print (sensor_names)
-        if len(sensor_names) == 0:
-            logger.warning("No matching sensors found!")
-        else:
-            for sensor_name in sensor_names:
-                try:
-                    sensor_value = yield client.sensor_value(sensor_name,
-                                                                include_value_ts=True)
-                    logger.info("\nValue for sensor {} --> {}".format(sensor_name, sensor_value))
-                    print ("\nValue for sensor {} --> {}".format(sensor_name, sensor_value))
-                except SensorNotFoundError as exc:
-                    print "\n", exc
-                    continue
-            # TODO - get more information using the client?
+        self.io_loop.run_sync(lambda: self._get_future_targets(product_id))
+        sensors_and_values = self.io_loop.run_sync(lambda: self._get_sensor_values(product_id, self.SENSOR_EXPRESSIONS))
+        print (sensors_and_values)
+         # TODO - get more information using the client?
 
     @tornado.gen.coroutine
-    def _capture_start(self, message):
+    def _capture_start(self, product_id):
         """Responds to capture-start request
 
         Args:
@@ -211,13 +179,11 @@ class BLKATPortalClient(object):
         Examples:
             TODO
         """
-        msg_parts = message['data'].split(':')
-        product_id = msg_parts[1] # the element after the capture-start identifier
-        client = self.subarray_katportals[product_id]
+        self.io_loop.run_sync(lambda: self._get_future_targets(product_id))
         # TODO - get information using the client!
 
     @tornado.gen.coroutine
-    def _capture_stop(self, message):
+    def _capture_stop(self, product_id):
         """Responds to capture-stop request
 
         Args:
@@ -235,7 +201,7 @@ class BLKATPortalClient(object):
         # TODO - get information using the client!
 
     @tornado.gen.coroutine
-    def _capture_done(self, message):
+    def _capture_done(self, product_id):
         """Responds to capture-done request
 
         Args:
@@ -253,20 +219,18 @@ class BLKATPortalClient(object):
         # TODO - get information using the client!
 
     @tornado.gen.coroutine
-    def _deconfigure(self, message):
+    def _deconfigure(self, product_id):
         """Responds to deconfigure request
 
         Args:
-            message (str): the message sent over the alerts redis channel
+            product_id (str): the product id given in the ?configure request
 
         Returns:
-            None, but does many things!
+            None
 
         Examples:
             TODO
         """
-        msg_parts = message['data'].split(':')
-        product_id = msg_parts[1] # the element after the deconfigure identifier
         if product_id not in self.subarray_katportals:
             logger.warning("Failed to deconfigure a non-existent product_id: {}".format(product_id))
         else:
@@ -286,6 +250,11 @@ class BLKATPortalClient(object):
             TODO
         """
         logger.warning("Unrecognized alert : {}".format(message['data']))
+
+    @tornado.gen.coroutine
+    def stop(self):
+        log.info("Shutting Down Katportal Clients")
+        self.io_loop.stop()
 
     def _print_start_image(self):
         print (R"""
@@ -307,7 +276,7 @@ class BLKATPortalClient(object):
 |                                                 |
 |                KATPortal Client                 |
 |                                                 |
-|                 Version: {}                     |
+|                 Version: {}                    |
 |                                                 |
 |  github.com/ejmichaud/meerkat-backend-interface |
 |                                                 |

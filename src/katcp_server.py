@@ -105,8 +105,8 @@ class BLBackendInterface(AsyncDeviceServer):
                     ;      (
                     ; ,   ` \
                     ;, ,     \
-                   ;    |    |
-                   ; |, |    |\       MeerKAT BL Backend Interface:
+                   ;    |    |        MeerKAT BL Backend Interface:
+                   ; |, |    |\       KATCP Server
                   ;  |  |    | \      Version: {}
                   |.-\ ,\    |\ :     Port: {}
                   |.| `. `-. | ||

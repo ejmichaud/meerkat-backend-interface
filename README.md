@@ -80,7 +80,7 @@ The `KATCP Server` receives requests from `CAM`. These requests include:
 * ?request-timeout-hint (pre-standard only if protocol flags indicates timeout hints, supported for KATCP v5.1 or later)
 * ?sensor-sampling-clear (non-standard)
 
-The `?configure` `?capture-init` `?capture-start` `?capture-stop` `?capture-done` `?deconfigure` and `?halt` requests have custom implementations in `src/server.py`'s `BLBackendInterface` class. The rest are inherited from its superclass. Together, these requests (particularly `?configure`) contain important metadata, such as the URLs for the raw voltage data coming off the telescope, and their timing is important too. For instance, we'll know when an observation has started when we receive the `?capture-start` request.
+The `?configure` `?capture-init` `?capture-start` `?capture-stop` `?capture-done` `?deconfigure` and `?halt` requests have custom implementations in `src/katcp_server.py`'s `BLBackendInterface` class. The rest are inherited from its superclass. Together, these requests (particularly `?configure`) contain important metadata, such as the URLs for the raw voltage data coming off the telescope, and their timing is important too. For instance, we'll know when an observation has started when we receive the `?capture-start` request.
 
 ### Redis Server
 A redis database is a key-value store that is great for sharing information between modules in a system like this. It runs as a server on the local network that can be modified and accessed via requests. It has a command-line client, but the [redis-py](https://github.com/andymccurdy/redis-py) python module is how we interface with it within our python code.
