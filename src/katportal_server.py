@@ -251,11 +251,6 @@ class BLKATPortalClient(object):
         """
         logger.warning("Unrecognized alert : {}".format(message['data']))
 
-    @tornado.gen.coroutine
-    def stop(self):
-        log.info("Shutting Down Katportal Clients")
-        self.io_loop.stop()
-
     def _print_start_image(self):
         print (R"""
        ________________________________

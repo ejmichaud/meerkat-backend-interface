@@ -1,16 +1,15 @@
 import signal
 import os
+import sys
 import logging
 import tornado
 from src.katportal_server import BLKATPortalClient
 
 log = logging.getLogger("BLUSE.interface")
 
-@tornado.gen.coroutine
-def on_shutdown(ioloop, server):
+def on_shutdown():
     log.info("Shutting Down Katportal Clients")
-    yield server.stop()
-    ioloop.stop()
+    sys.exit()
 
 if __name__ == '__main__':
     
@@ -24,5 +23,5 @@ if __name__ == '__main__':
     log.addHandler(handler)
 
     client = BLKATPortalClient()
-    signal.signal(signal.SIGINT, lambda sig, frame: client.io_loop.add_callback_from_signal(client.stop))
+    signal.signal(signal.SIGINT, lambda sig, frame: on_shutdown())
     client.start()
