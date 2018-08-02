@@ -108,7 +108,6 @@ class BLKATPortalClient(object):
         write_list_redis(self.redis_server, key, repr(schedule_blocks)) #overrides previous list
         # TODO - get more information?
 
-    @tornado.gen.coroutine
     def _capture_start(self, product_id):
         """Responds to capture-start request
 
@@ -129,7 +128,6 @@ class BLKATPortalClient(object):
             write_pair_redis(self.redis_server, key, repr(value))
         # TODO - get more information?
 
-    @tornado.gen.coroutine
     def _capture_stop(self, product_id):
         """Responds to capture-stop request
 
@@ -147,7 +145,6 @@ class BLKATPortalClient(object):
         client = self.subarray_katportals[product_id]
         # TODO - get more information?
 
-    @tornado.gen.coroutine
     def _capture_done(self, product_id):
         """Responds to capture-done request
 
@@ -163,7 +160,6 @@ class BLKATPortalClient(object):
         pass
         # TODO - get any information?
 
-    @tornado.gen.coroutine
     def _deconfigure(self, product_id):
         """Responds to deconfigure request
 
