@@ -120,7 +120,7 @@ class BLKATPortalClient(object):
         Examples:
             TODO
         """
-        sensors_to_query = ['target']
+        sensors_to_query = ['target', 'pos.request-base-ra', 'pos.request-base-dec']
         sensors_and_values = self.io_loop.run_sync(lambda: \
                 self._get_sensor_values(product_id, sensors_to_query))
         for sensor_name, value in sensors_and_values.items():
