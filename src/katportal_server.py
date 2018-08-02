@@ -229,7 +229,7 @@ class BLKATPortalClient(object):
             >>> self.io_loop.run_sync(lambda: self._get_sensor_values(product_id, ["target", "ra", "dec"]))
         """
         client = self.subarray_katportals[product_id]
-        sensor_names = yield client.sensor_names(self.SENSOR_EXPRESSIONS)
+        sensor_names = yield client.sensor_names(targets)
         sensors_and_values = dict()
         if len(sensor_names) == 0:
             logger.warning("No matching sensors found!")
