@@ -248,19 +248,19 @@ class BLKATPortalClient(object):
         Examples:
             >>> self.io_loop.run_sync(lambda: self._get_sensor_values(product_id, ["target", "ra", "dec"]))
         """
+        sensors_and_values = dict()
         if not targets:
             logger.warning("Sensor list empty. Not querying katportal...")
-            return 
+            raise tornado.gen.Return(sensors_and_values)
         client = self.subarray_katportals[product_id]
         sensor_names = yield client.sensor_names(targets)
-        sensors_and_values = dict()
         if not sensor_names:
             logger.warning("No matching sensors found!")
         else:
             for sensor_name in sensor_names:
                 try:
                     sensor_value = yield client.sensor_value(sensor_name,
-                                                                include_value_ts=True)
+                                                include_value_ts=True)
                     sensors_and_values[sensor_name] = self._convert_SensorSampleValueTs_to_dict(sensor_value)
                 except SensorNotFoundError as exc:
                     print "\n", exc
