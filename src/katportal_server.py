@@ -89,7 +89,12 @@ class BLKATPortalClient(object):
                             on_update_callback=None, logger=logger)
         self.subarray_katportals[product_id] = client
         logger.info("Created katportalclient object for : {}".format(product_id))
-        # get data?
+        sensors_to_query = [] # TODO - add sensors to query on ?configure
+        sensors_and_values = self.io_loop.run_sync(lambda: \
+                self._get_sensor_values(product_id, sensors_to_query))
+        for sensor_name, value in sensors_and_values.items():
+            key = "{}:{}".format(product_id, sensor_name)
+            write_pair_redis(self.redis_server, key, repr(value))
 
     def _capture_init(self, product_id):
         """Responds to capture-init request by getting schedule blocks
@@ -106,7 +111,12 @@ class BLKATPortalClient(object):
         schedule_blocks = self.io_loop.run_sync(lambda: self._get_future_targets(product_id))
         key = "{}:schedule_blocks".format(product_id)
         write_list_redis(self.redis_server, key, repr(schedule_blocks)) #overrides previous list
-        # TODO - get more information?
+        sensors_to_query = [] # TODO - add sensors to query on ?capture_init
+        sensors_and_values = self.io_loop.run_sync(lambda: \
+                self._get_sensor_values(product_id, sensors_to_query))
+        for sensor_name, value in sensors_and_values.items():
+            key = "{}:{}".format(product_id, sensor_name)
+            write_pair_redis(self.redis_server, key, repr(value))
 
     def _capture_start(self, product_id):
         """Responds to capture-start request
@@ -120,7 +130,7 @@ class BLKATPortalClient(object):
         Examples:
             TODO
         """
-        sensors_to_query = ['target', 'pos.request-base-ra', 'pos.request-base-dec']
+        sensors_to_query = ['target', 'pos_request-base-ra', 'pos_request-base-dec', 'weight']
         sensors_and_values = self.io_loop.run_sync(lambda: \
                 self._get_sensor_values(product_id, sensors_to_query))
         for sensor_name, value in sensors_and_values.items():
@@ -157,8 +167,12 @@ class BLKATPortalClient(object):
         Examples:
             TODO
         """
-        pass
-        # TODO - get any information?
+        sensors_to_query = [] # TODO - add sensors to query on ?capture_done
+        sensors_and_values = self.io_loop.run_sync(lambda: \
+                self._get_sensor_values(product_id, sensors_to_query))
+        for sensor_name, value in sensors_and_values.items():
+            key = "{}:{}".format(product_id, sensor_name)
+            write_pair_redis(self.redis_server, key, repr(value))
 
     def _deconfigure(self, product_id):
         """Responds to deconfigure request
@@ -172,6 +186,12 @@ class BLKATPortalClient(object):
         Examples:
             TODO
         """
+        sensors_to_query = [] # TODO - add sensors to query on ?deconfigure
+        sensors_and_values = self.io_loop.run_sync(lambda: \
+                self._get_sensor_values(product_id, sensors_to_query))
+        for sensor_name, value in sensors_and_values.items():
+            key = "{}:{}".format(product_id, sensor_name)
+            write_pair_redis(self.redis_server, key, repr(value))
         if product_id not in self.subarray_katportals:
             logger.warning("Failed to deconfigure a non-existent product_id: {}".format(product_id))
         else:
@@ -228,10 +248,13 @@ class BLKATPortalClient(object):
         Examples:
             >>> self.io_loop.run_sync(lambda: self._get_sensor_values(product_id, ["target", "ra", "dec"]))
         """
+        if not targets:
+            logger.warning("Sensor list empty. Not querying katportal...")
+            return 
         client = self.subarray_katportals[product_id]
         sensor_names = yield client.sensor_names(targets)
         sensors_and_values = dict()
-        if len(sensor_names) == 0:
+        if not sensor_names:
             logger.warning("No matching sensors found!")
         else:
             for sensor_name in sensor_names:
