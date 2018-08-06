@@ -73,10 +73,6 @@ class BLBackendInterface(AsyncDeviceServer):
         * request-timeout-hint (pre-standard only if protocol flags indicates
                               timeout hints, supported for KATCP v5.1 or later)
         * sensor-sampling-clear (non-standard)
-
-    TODO:
-        Override halt request to send message to slack, publish to redis,
-        publish to syslog, and stop the whole server process with sys.exit(0)
     """
 
     VERSION_INFO = ("BLUSE-katcp-interface", 0, 1)
@@ -138,10 +134,6 @@ ___,-| |----''    / |         `._`-.          `----
         to process a particular data product, this command should 
         be used to configure a BLUSE instance when a new subarray is activated.
         
-        TODO:
-            - If using katportalclient to get information from CAM, 
-            then reconnect and re-subscribe to all sensors of interest at this time.
-
         Args:
             product_id (str): This is a name for the data product, 
                     which is a useful tag to include in the data, 
@@ -186,10 +178,10 @@ ___,-| |----''    / |         `._`-.          `----
                 The stream names ending in x are horizontally polarised, and those 
                 ending in y are vertically polarised.
 
-        proxy_name (str): The CAM name for the instance of the BLUSE data 
-        proxy that is being configured.  For example, "BLUSE_3".  This 
-        can be used to query sensors on the correct proxy.  Note that for 
-        BLUSE there will only be a single instance of the proxy in a subarray.
+            proxy_name (str): The CAM name for the instance of the BLUSE data 
+                proxy that is being configured.  For example, "BLUSE_3".  This 
+                can be used to query sensors on the correct proxy.  Note that for 
+                BLUSE there will only be a single instance of the proxy in a subarray.
 
         Returns:
             None... but replies with "ok" or "fail" and logs either info or error
@@ -213,6 +205,7 @@ ___,-| |----''    / |         `._`-.          `----
             json_dict = unpack_dict(streams_json)
             cam_url = json_dict['cam.http']['camdata']
         except Exception as e:
+            log.error(e)
             return ("fail", e)
         statuses = []
         statuses.append(write_pair_redis(self.redis_server, "{}:timestamp".format(product_id), time.time()))
@@ -228,7 +221,6 @@ ___,-| |----''    / |         `._`-.          `----
             return ("ok",)
         else:
             return ("fail", "Failed to publish to our local redis server")
-        
 
     @request(Str())
     @return_reply()
@@ -354,24 +346,16 @@ ___,-| |----''    / |         `._`-.          `----
         self._local_time_synced = Sensor.boolean(
             "local-time-synced",
             description="Indicates BLUSE is NTP syncronised.",
-            default=True,
+            default=True, # TODO: implement actual NTP synchronization request
             initial_status=Sensor.NOMINAL)
         self.add_sensor(self._local_time_synced)
 
         self._version = Sensor.string(
             "version",
             description="Reports the current BLUSE version",
-            default=str(self.VERSION_INFO[1:]).strip('()').replace(' ', '').replace(",", '.'),
+            default=str(self.VERSION_INFO[1:]).strip('()').replace(' ', '').replace(",", '.'), # e.g. '1.0'
             initial_status=Sensor.NOMINAL)
         self.add_sensor(self._version)
-
-    @request(Str())
-    @return_reply(Str())
-    def request_save(self, req, msg):
-        """Saves msg to redis channel 'alerts'
-        """
-        publish_to_redis(self.redis_server, REDIS_CHANNELS.alerts, msg)
-        return ("ok", "published: {}".format(msg))
 
     def request_halt(self, req, msg):
         """Halts the server, logs to syslog and slack, and exits the program
@@ -402,7 +386,7 @@ ___,-| |----''    / |         `._`-.          `----
         self.ioloop.add_callback(lambda: chain_future(_halt(), f))
         log.critical("HALTING SERVER!!!")
         # TODO: uncomment when you deploy
-        # notify_slack("KATCP server on blh1 (Cape Town) has halted. Might want to check that!")
+        # notify_slack("KATCP server at MeerKAT has halted. Might want to check that!")
         sys.exit(0)
 
     @request()

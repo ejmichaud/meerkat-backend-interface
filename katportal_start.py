@@ -8,6 +8,8 @@ from src.katportal_server import BLKATPortalClient
 log = logging.getLogger("BLUSE.interface")
 
 def on_shutdown():
+    # TODO: uncomment when you deploy
+    # notify_slack("KATPortal module at MeerKAT has halted. Might want to check that!")
     log.info("Shutting Down Katportal Clients")
     sys.exit()
 

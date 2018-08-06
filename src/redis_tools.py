@@ -7,13 +7,14 @@ class REDIS_CHANNELS:
     """The redis channels that may be published to"""
     alerts = "alerts"
 
-def write_pair_redis(server, key, value):
+def write_pair_redis(server, key, value, expiration=None):
     """Creates a key-value pair self.redis_server's redis-server.
 
     Args:
         server (redis.StrictRedis) a redis-py redis server object
         key (str): the key of the key-value pair
         value (str): the value of the key-value pair
+        expiration (number): number of seconds before key expiration
     
     Returns:
         True if success, False otherwise, and logs either an 'debug' or 'error' message
@@ -23,7 +24,7 @@ def write_pair_redis(server, key, value):
         >>> server._write_to_redis("aliens:found", "yes")
     """
     try:
-        server.set(key, value)
+        server.set(key, value, ex=expiration)
         log.debug("Created redis key/value: {} --> {}".format(key, value))
         return True
     except:

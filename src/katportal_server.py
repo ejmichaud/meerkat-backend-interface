@@ -1,5 +1,3 @@
-# Copyright 2016 SKA South Africa (http://ska.ac.za/)
-
 import logging
 import argparse
 import tornado.gen
@@ -37,7 +35,7 @@ class BLKATPortalClient(object):
 
     TODO:
         1. Support thread-safe stopping of ioloop
-        2.  
+        2. Use websocket subscription instead of http requests?
     """
 
     VERSION = 0.1
@@ -80,16 +78,13 @@ class BLKATPortalClient(object):
 
         Returns:
             None
-
-        Examples:
-            TODO 
         """
         cam_url = self.redis_server.get("{}:{}".format(product_id, 'cam:url'))
         client = KATPortalClient(cam_url, 
                             on_update_callback=None, logger=logger)
         self.subarray_katportals[product_id] = client
         logger.info("Created katportalclient object for : {}".format(product_id))
-        sensors_to_query = [] # TODO - add sensors to query on ?configure
+        sensors_to_query = [] # TODO: add sensors to query on ?configure
         sensors_and_values = self.io_loop.run_sync(lambda: \
                 self._get_sensor_values(product_id, sensors_to_query))
         for sensor_name, value in sensors_and_values.items():
@@ -104,14 +99,11 @@ class BLKATPortalClient(object):
 
         Returns:
             None
-
-        Examples:
-            TODO
         """
         schedule_blocks = self.io_loop.run_sync(lambda: self._get_future_targets(product_id))
         key = "{}:schedule_blocks".format(product_id)
         write_list_redis(self.redis_server, key, repr(schedule_blocks)) #overrides previous list
-        sensors_to_query = [] # TODO - add sensors to query on ?capture_init
+        sensors_to_query = [] # TODO:  add sensors to query on ?capture_init
         sensors_and_values = self.io_loop.run_sync(lambda: \
                 self._get_sensor_values(product_id, sensors_to_query))
         for sensor_name, value in sensors_and_values.items():
@@ -126,17 +118,14 @@ class BLKATPortalClient(object):
 
         Returns:
             None, but does many things!
-
-        Examples:
-            TODO
         """
+        # TODO: get more information?
         sensors_to_query = ['target', 'pos_request_base_ra', 'pos_request_base_dec', 'weight']
         sensors_and_values = self.io_loop.run_sync(lambda: \
                 self._get_sensor_values(product_id, sensors_to_query))
         for sensor_name, value in sensors_and_values.items():
             key = "{}:{}".format(product_id, sensor_name)
             write_pair_redis(self.redis_server, key, repr(value))
-        # TODO - get more information?
 
     def _capture_stop(self, product_id):
         """Responds to capture-stop request
@@ -146,14 +135,11 @@ class BLKATPortalClient(object):
 
         Returns:
             None, but does many things!
-
-        Examples:
-            TODO
         """
         msg_parts = message['data'].split(':')
         product_id = msg_parts[1] # the element after the capture-stop identifier
         client = self.subarray_katportals[product_id]
-        # TODO - get more information?
+        # TODO: get more information?
 
     def _capture_done(self, product_id):
         """Responds to capture-done request
@@ -163,11 +149,8 @@ class BLKATPortalClient(object):
 
         Returns:
             None, but does many things!
-
-        Examples:
-            TODO
         """
-        sensors_to_query = [] # TODO - add sensors to query on ?capture_done
+        sensors_to_query = [] # TODO: add sensors to query on ?capture_done
         sensors_and_values = self.io_loop.run_sync(lambda: \
                 self._get_sensor_values(product_id, sensors_to_query))
         for sensor_name, value in sensors_and_values.items():
@@ -182,11 +165,8 @@ class BLKATPortalClient(object):
 
         Returns:
             None
-
-        Examples:
-            TODO
         """
-        sensors_to_query = [] # TODO - add sensors to query on ?deconfigure
+        sensors_to_query = [] # TODO: add sensors to query on ?deconfigure
         sensors_and_values = self.io_loop.run_sync(lambda: \
                 self._get_sensor_values(product_id, sensors_to_query))
         for sensor_name, value in sensors_and_values.items():
@@ -206,9 +186,6 @@ class BLKATPortalClient(object):
 
         Returns:
             None
-
-        Examples:
-            TODO
         """
         logger.warning("Unrecognized alert : {}".format(message['data']))
 
@@ -265,7 +242,7 @@ class BLKATPortalClient(object):
                 except SensorNotFoundError as exc:
                     print "\n", exc
                     continue
-            # TODO - get more information using the client?
+            # TODO: get more information using the client?
         raise tornado.gen.Return(sensors_and_values)
 
     def _convert_SensorSampleValueTs_to_dict(self, sensor_value):
@@ -290,9 +267,6 @@ class BLKATPortalClient(object):
 
             Returns:
                 (dict)
-
-            Examples:
-                TODO
         """
         sensor_value_dict = dict()
         sensor_value_dict['timestamp'] = sensor_value.timestamp

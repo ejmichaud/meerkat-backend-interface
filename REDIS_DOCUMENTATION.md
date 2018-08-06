@@ -48,6 +48,17 @@ It may contain:
 * One X-engine stream, with type:  cbf.baseline_correlation_products.
 * Two beam streams, with type: cbf.tied_array_channelised_voltage.  The stream names ending in x are horizontally polarised, and those ending in y are vertically polarised
 
+### `[product_id]:[sensor_name]` --> (string):
+Most of the keys published to redis will look like this, and are created from the `Katportal Client` module. The `[product_id]` is that of the subarray that is queried by the `Katportal Client`. The value of this key a repr string for a python dictionary containing sensor information. The dictionary looks like this:
+```
+{
+    'status': u'nominal', 
+    'timestamp': 1533319620.245345, 
+    'value': u'PKS 0408-65, radec bfcal single_accumulation, 4:08:20.38, -65:45:09.1, (800.0 8400.0 -3.708 3.807 -0.7202)', 
+    'value_timestamp': 1533291480.096976
+}
+```
+
 # Messages
 *Here are the messages published to the various channels of the redis server*
 
