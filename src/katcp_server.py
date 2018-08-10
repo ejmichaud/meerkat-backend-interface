@@ -75,8 +75,8 @@ class BLBackendInterface(AsyncDeviceServer):
         * sensor-sampling-clear (non-standard)
     """
 
-    VERSION_INFO = ("BLUSE-katcp-interface", 0, 1)
-    BUILD_INFO = ("BLUSE-katcp-implementation", 0, 1, "rc?")
+    VERSION_INFO = ("BLUSE-katcp-interface", 1, 0)
+    BUILD_INFO = ("BLUSE-katcp-implementation", 1, 0, "rc?")
     DEVICE_STATUSES = ["ok", "fail", "degraded"]
 
 

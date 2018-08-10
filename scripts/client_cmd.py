@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s - %(name)s - %(filename)s:"
                     "%(lineno)s - %(levelname)s - %(message)s")
 
-log = logging.getLogger("reynard.basic_cli")
+log = logging.getLogger("BLUSE.interface")
 
 
 class KatcpCli(Cmd):

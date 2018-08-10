@@ -38,7 +38,7 @@ class BLKATPortalClient(object):
         2. Use websocket subscription instead of http requests?
     """
 
-    VERSION = 0.1
+    VERSION = 1.0
     
     def __init__(self):
         """Our client server to the Katportal"""
