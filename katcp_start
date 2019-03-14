@@ -46,7 +46,8 @@ def cli(prog):
         action='store_true',
         help='verbose logger output for debugging')
 
-    return parser.parse_args()
+    args = parser.parse_args()
+    main(ip=args.ip, port=args.port, debug=args.debug)
 
 
 # Set up logging to console and file.
@@ -60,15 +61,14 @@ def set_logger(log_level=logging.DEBUG):
 
 
 @tornado.gen.coroutine
-def on_shutdown(ioloop, server):
+def on_shutdown(ioloop, server, log):
     log.info("Shutting down server")
     yield server.stop()
     ioloop.stop()
 
 
-if __name__ == "__main__":
-    args = cli(sys.argv[0])
-    if args.debug:
+def main(ip, port, debug):
+    if debug:
         # note: debug logging will only go to logfile
         log_level = logging.DEBUG
     else:
@@ -78,10 +78,10 @@ if __name__ == "__main__":
     log.info("Starting BLBackendInterface instance")
 
     ioloop = tornado.ioloop.IOLoop.current()
-    server = BLBackendInterface(args.ip, args.port)
+    server = BLBackendInterface(ip, port)
     signal.signal(signal.SIGINT,
                   lambda sig, frame: ioloop.add_callback_from_signal(
-                      on_shutdown, ioloop, server))
+                      on_shutdown, ioloop, server, log))
 
     def start():
         server.start()
@@ -91,5 +91,10 @@ if __name__ == "__main__":
         #     ip = socket.gethostbyname(node["host"])
         #     print node["host"],ip,node["port"]
         #     server._add_node(node["host"],ip,node["port"])
+
     ioloop.add_callback(start)
     ioloop.start()
+
+
+if __name__ == "__main__":
+    cli(sys.argv[0])
