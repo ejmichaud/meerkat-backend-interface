@@ -43,11 +43,18 @@ This repository is for the `KATCP Server` and `Katportal Client` modules of the 
              v                         v                         |
         +----+------+             +----+------+                  |
         | Real-time |             | Target    |                  |
-        | Signal    |             | Selection |   raw voltage    |
+        | Signal    |             | Selection |   raw ^oltage    |
         | Detection | <-----------+ &         | <----------------+
         | and Data  |             | Beam      |      stream
         | Storage   |             | Forming   |
         +-----------+             +-----------+
+
+
+ To be added:
+ +-------------+
+ | Stream      |
+ | Distributor |
+ +-------------+
 ```
 
 ## Description of modules in above diagram:
