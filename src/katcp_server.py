@@ -212,7 +212,7 @@ ___,-| |----''    / |         `._`-.          `----
         statuses.append(write_list_redis(self.redis_server, "{}:antennas".format(product_id), antennas_list))
         statuses.append(write_pair_redis(self.redis_server, "{}:n_channels".format(product_id), n_channels))
         statuses.append(write_pair_redis(self.redis_server, "{}:proxy_name".format(product_id), proxy_name))
-        statuses.append(write_pair_redis(self.redis_server, "{}:streams".format(product_id), repr(json_dict)))
+        statuses.append(write_pair_redis(self.redis_server, "{}:streams".format(product_id), json.dumps(json_dict)))
         statuses.append(write_pair_redis(self.redis_server, "{}:cam:url".format(product_id), cam_url))
         statuses.append(write_pair_redis(self.redis_server, "current:obs:id", product_id))
         msg = "configure:{}".format(product_id)

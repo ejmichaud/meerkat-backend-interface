@@ -23,7 +23,7 @@ The CAM name for the instance of the BLUSE data proxy that is being configured. 
 The url used by the `Katportal Client` module to query additional metadata for the subarray associated with the given product id.
 
 ### `[product_id]:streams` --> (string):
-A repr string for a python dictionary that contains different URL's for the different types of raw data that are produced in the current observation being conducted on the given product_id's subarray. To convert this string to a python dictionary, simply call `eval(<repr string>)`, and it will return a python dictionary object. This dictionary will look something like this:
+A json-formatted string for a python dictionary that contains different URL's for the different types of raw data that are produced in the current observation being conducted on the given product_id's subarray. To convert this string to a python dictionary, simply call `json.loads(<streams_string>)`, and it will return a python dictionary object. This dictionary will look something like this:
 ```
 {
     "cam.http":
