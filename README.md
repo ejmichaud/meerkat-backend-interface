@@ -43,7 +43,7 @@ This repository is for the `KATCP Server` and `Katportal Client` modules of the 
              v                         v                         |
         +----+------+             +----+------+                  |
         | Real-time |             | Target    |                  |
-        | Signal    |             | Selection |   raw ^oltage    |
+        | Signal    |             | Selection |   raw voltage    |
         | Detection | <-----------+ &         | <----------------+
         | and Data  |             | Beam      |      stream
         | Storage   |             | Forming   |
