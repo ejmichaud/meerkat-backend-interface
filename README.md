@@ -48,6 +48,13 @@ This repository is for the `KATCP Server` and `Katportal Client` modules of the 
         | and Data  |             | Beam      |      stream
         | Storage   |             | Forming   |
         +-----------+             +-----------+
+
+
+ To be added:
+ +-------------+
+ | Stream      |
+ | Distributor |
+ +-------------+
 ```
 
 ## Description of modules in above diagram:
@@ -190,4 +197,5 @@ $ grep -r -n TODO .
 5. [TRAPUM-CAM Interface](https://github.com/ewanbarr/reynard/tree/refactor)
 6. [Swim Lane Diagram](https://docs.google.com/spreadsheets/d/1U9Un2jd3GsgTeaJ96GhQPXckZkG_TdRd0DCsaxFeX3Q/edit#gid=0)
 7. [Katportal Docs](https://docs.google.com/document/d/1BD22ZwaVwHiB6vxc0ryP9vUXnFAsTbmD8K2oBPRPWCo/edit). 
+<<<<<<< HEAD
 8. [REDIS_DOCUMENTATION](docs/REDIS_DOCUMENTATION.md)
