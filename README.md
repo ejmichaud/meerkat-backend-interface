@@ -1,6 +1,6 @@
 # meerkat-backend-interface
 
-For the latest comprehensive documentation --> [ericjmichaud.com/meerkat-backend-interface](ericjmichaud.com/meerkat-backend-interface)
+For the latest comprehensive documentation --> [ericjmichaud.com/meerkat-backend-interface](http://ericjmichaud.com/meerkat-backend-interface/#/)
 
 ---
 
