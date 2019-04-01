@@ -136,7 +136,7 @@ Which will start the katportal querying system.
 Both of these processes need to be running to properly acquire all observational metadata.
 
 ## Redis Formatting:
-For redis key formatting and respective value descriptions, see [REDIS_DOCUMENTATION](REDIS_DOCUMENTATION.md)
+For redis key formatting and respective value descriptions, see [REDIS_DOCUMENTATION](docs/REDIS_DOCUMENTATION.md)
 
 ## Next Steps:
 *There are a range of additions and modifications that you will have to make before deploying. The reason why many of these have been left out is that as of 2018-08-06, I simply don't have enough information about the needs of Breakthrough Listen to build them. Here's what you should keep in mind:*
@@ -148,7 +148,7 @@ For redis key formatting and respective value descriptions, see [REDIS_DOCUMENTA
   <img src="https://ericjmichaud.com/other/seti/images/katportal_code_sample.png" align="center" width="80%">
 </div>
 
-* Currently, sensor values are stored in redis associated with the `product_id` of the subarray which they were queried from (see [REDIS_DOCUMENTATION](REDIS_DOCUMENTATION.md)). Since product ids are temporary, this could lead to a massive build-up of outdated sensor values in the redis server, since a new key is created for each product_id * for each sensor. This could add up quickly! Consider setting an expiration on the keys created within `src/katportal_server.py`, by passing an `expiration` (in seconds) named argument to `write_pair_redis`. 
+* Currently, sensor values are stored in redis associated with the `product_id` of the subarray which they were queried from (see [REDIS_DOCUMENTATION](docs/REDIS_DOCUMENTATION.md)). Since product ids are temporary, this could lead to a massive build-up of outdated sensor values in the redis server, since a new key is created for each product_id * for each sensor. This could add up quickly! Consider setting an expiration on the keys created within `src/katportal_server.py`, by passing an `expiration` (in seconds) named argument to `write_pair_redis`. 
 
 ### Smaller Things:
 * Currently, `katportal_start.py` does not shut down in a thread-safe way. `katcp_start.py` manages to do this, but it uses a complex mechanism that I don't understand. Consider supporting thread-safe shutdown of `src/katportal_server.py`'s io_loop in the future.
@@ -190,4 +190,4 @@ $ grep -r -n TODO .
 5. [TRAPUM-CAM Interface](https://github.com/ewanbarr/reynard/tree/refactor)
 6. [Swim Lane Diagram](https://docs.google.com/spreadsheets/d/1U9Un2jd3GsgTeaJ96GhQPXckZkG_TdRd0DCsaxFeX3Q/edit#gid=0)
 7. [Katportal Docs](https://docs.google.com/document/d/1BD22ZwaVwHiB6vxc0ryP9vUXnFAsTbmD8K2oBPRPWCo/edit). 
-8. [REDIS_DOCUMENTATION](REDIS_DOCUMENTATION.md)
+8. [REDIS_DOCUMENTATION](docs/REDIS_DOCUMENTATION.md)

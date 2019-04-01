@@ -1,126 +1,30 @@
-# meerkat-backend-interface
+# Breakthorugh Listen User Supplied Equipment (BLUSE) Stack at MeerKAT
 
-This repository is for the `KATCP Server` and `Katportal Client` modules of the below diagram. Together, these modules extract all observational metadata to enable Breakthrough Listen's commensal observing program at the MeerKAT telescope. These data include:
-* URLs of SPEAD packet streams containing raw voltage data, to be subscribed to by our Beam Former.
-* current target information
-* schedule block information
-* antenna weights
-* etc...
+This documentation details the design of Breakthrough Listen's hardware and software systems at MeerKAT. At a high level, observation data and metadata flows through the network as indicated in the below diagram: 
 
-###  Diagram of Breakthrough Listen To-Be-Built Software Stack at MeerKAT
+<img src="images/diagram.png">
+
+In the above diagram we see the following components:
+
+## CAM
+The **C**ontrol **A**nd **M**onitoring computers at MeerKAT. These are not maintained by us, but are what we interface with to acquire metadata.
+
+## [KATCP Server](KATCP.md)
+The `KATCP Server` receives signals from `CAM`. These requests include:
+
 ```
-        +----------+
-        |          |
-        |  KATCP   | Requests containing metadata
-        |  Server  | <------------------------+
-        |          |                          |
-        +--+-------+                          |               ,-.
-           |                                  |              / \  `.  __..-,O
-           |                                  |             :   \ --''_..-'.'
-           v                                  |             |    . .-' `. '.
-                                              |             :     .     .`.'
-        +----------+                     +----+-----+        \     `.  /  ..
-        |          |                     |          |         \      `.   ' .
-        |  Redis   |                     |          | +------> `,       `.   \
-+-------+  Server  |                     |   CAM    |          ,|,`.       `-.\
-|       |          |                     |          |        '.||  ``-...__..-`
-|       +------+---+                     |          | <-----+  |  |
-|              |                         +----+--+--+          |__|
-|          ^   |                              ^  |             /||\
-|          |   v                              |  |            //||\\
-|          |                                  |  |           // || \\
-|       +--+--------+                         |  |       ___//__||__\\___
-|       |           | Requests for metadata   |  |       '--------------'
-|       | Katportal +-------------------------+  |               |
-|       | Client    |           metadata         |               |
-|       |           | <--------------------------+               |
-|       +-----------+                                            |
-|                                                                |
-|                                                                |
-+------------+-------------------------+                         |
-             |                         |                         |
-             |                         |                         |
-             v                         v                         |
-        +----+------+             +----+------+                  |
-        | Real-time |             | Target    |                  |
-        | Signal    |             | Selection |   raw voltage    |
-        | Detection | <-----------+ &         | <----------------+
-        | and Data  |             | Beam      |      stream
-        | Storage   |             | Forming   |
-        +-----------+             +-----------+
+configure, capture-init, capture-start, capture-stop, capture-done, deconfigure, halt, help, log-level, restart [#restartf1]_, client-list, sensor-list, sensor-sampling, sensor-value, watchdog, version-list (only standard in KATCP v5 or later), request-timeout-hint (pre-standard only if protocol flags indicates timeout hints, supported for KATCP v5.1 or later), sensor-sampling-clear (non-standard)
 ```
-
-## Description of modules in above diagram:
-
-### Telescope ASCII Art:
-Represents the actual antennas at the telescope. There are 64 of them.
-
-### CAM
-The **C**ontrol **A**nd **M**onitoring computers for the telescope. These are not maintained by us, but are what we interface with to acquire metadata.
-
-### KATCP Server
-The `KATCP Server` receives requests from `CAM`. These requests include:
-
-* ?configure
-* ?capture-init
-* ?capture-start
-* ?capture-stop
-* ?capture-done
-* ?deconfigure
-* ?halt
-* ?help
-* ?log-level
-* ?restart [#restartf1]_
-* ?client-list
-* ?sensor-list
-* ?sensor-sampling
-* ?sensor-value
-* ?watchdog
-* ?version-list (only standard in KATCP v5 or later)
-* ?request-timeout-hint (pre-standard only if protocol flags indicates timeout hints, supported for KATCP v5.1 or later)
-* ?sensor-sampling-clear (non-standard)
-
 The `?configure` `?capture-init` `?capture-start` `?capture-stop` `?capture-done` `?deconfigure` and `?halt` requests have custom implementations in `src/katcp_server.py`'s `BLBackendInterface` class. The rest are inherited from its superclass. Together, these requests (particularly `?configure`) contain important metadata, such as the URLs for the raw voltage data coming off the telescope, and their timing is important too. For instance, we'll know when an observation has started when we receive the `?capture-start` request. For more information, see the [ICD](https://docs.google.com/document/d/19GAZYT5OI1CLqoWU8Q2urBUYyTVfvWktsH4yTegrF_0/edit) and the [Swim Lane Diagram](https://docs.google.com/spreadsheets/d/1U9Un2jd3GsgTeaJ96GhQPXckZkG_TdRd0DCsaxFeX3Q/edit#gid=0)
 
-### Redis Server
+## [Redis Server](REDIS_DOCUMENTATION.md)
 A redis database is a key-value store that is great for sharing information between modules in a system like this. It runs as a server on the local network that can be modified and accessed via requests. It has a command-line client, but the [redis-py](https://github.com/andymccurdy/redis-py) python module is how we interface with it within our python code.
 
-### Katportal Client
+## [Katportal Client](KATPortalClient.md)
 The `Katportal Client` sends requests for additional metadata to `CAM`. 
 
-### Target Selection & Beam Forming
-System that selects targets from and forms pencil-beams to observe them. NOT YET BUILT, however our target list has been compiled by Logan Pierce :star:
-
-### Real-time Signal Detection and Data Storage
-Our signal detection and data storage systems.
-
-## Installation Instructions
-
-First, make sure to [install redis](https://redis.io/topics/quickstart). If it's installed, you should be able to start it by executing from the terminal:
-```
-redis-server
-```
-Next, download the repository like so:
-```
-git clone --recurse-submodules https://github.com/ejmichaud/meerkat-backend-interface
-```
-I'd recommend installing the module within a virtual environment. To create the Python 2 virtual environment:
-```
-virtualenv -p /usr/bin/python venv
-```
-And activate it:
-```
-source venv/bin/activate
-```
-To install, simply `cd` into the repo
-```
-cd meerkat-backend-interface
-```
-And install requirements with pip
-```
-pip install -r requirements.txt
-```
-This will install all dependencies, and you will be ready to start up the modules.
+## [Distributor](distributor.md)
+Publishes information to 64 Redis channels, which will be subscribed to by the compute nodes.
 
 ## Usage
 After starting redis on port 6379, simply start both modules like so:
