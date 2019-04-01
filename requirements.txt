@@ -35,6 +35,4 @@ wcwidth==0.1.7
 weather-api==1.0.4
 websocket-client==0.48.0
 yarg==0.1.9
-./reynard
-git+https://github.com/ska-sa/katportalclient.git
 katpoint
