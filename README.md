@@ -1,5 +1,9 @@
 # meerkat-backend-interface
 
+For the latest comprehensive documentation --> [ericjmichaud.com/meerkat-backend-interface](ericjmichaud.com/meerkat-backend-interface)
+
+---
+
 This repository is for the `KATCP Server` and `Katportal Client` modules of the below diagram. Together, these modules extract all observational metadata to enable Breakthrough Listen's commensal observing program at the MeerKAT telescope. These data include:
 * URLs of SPEAD packet streams containing raw voltage data, to be subscribed to by our Beam Former.
 * current target information
