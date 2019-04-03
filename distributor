@@ -105,16 +105,16 @@ if __name__ == "__main__":
     handler = logging.handlers.SysLogHandler(address=syslog_addr) 
     log.addHandler(handler)
 
-    LISTEN = redis_tools.REDIS_CHANNELS.alerts
+    ALERTS = redis_tools.REDIS_CHANNELS.alerts
 
     re = redis.StrictRedis(port=opts.port)
     ps = re.pubsub(ignore_subscribe_messages=True)
-    ps.subscribe(LISTEN)
+    ps.subscribe(ALERTS)
     try: 
         for message in ps.listen():
             msg_parts = message['data'].split(':')
             if len(msg_parts) != 2:
-                logger.info("Not processing this message --> {}".format(message))
+                log.info("Not processing this message --> {}".format(message))
                 continue
             msg_type = msg_parts[0]
             product_id = msg_parts[1]
