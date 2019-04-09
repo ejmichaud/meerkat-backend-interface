@@ -112,6 +112,7 @@ class BLKATPortalClient(object):
         """
         cam_url = self.redis_server.get("{}:{}".format(product_id, 'cam:url'))
         client = KATPortalClient(cam_url, on_update_callback=partial(self.on_update_callback_fn, product_id), logger=logger)
+        #client = KATPortalClient(cam_url, on_update_callback=lambda x: self.on_update_callback_fn(product_id), logger=logger)
         self.subarray_katportals[product_id] = client
         logger.info("Created katportalclient object for : {}".format(product_id))
         sensors_to_query = [] # TODO: add sensors to query on ?configure
@@ -135,7 +136,7 @@ class BLKATPortalClient(object):
         write_list_redis(self.redis_server, key, repr(schedule_blocks)) #overrides previous list
         # Start io_loop to listen to sensors whose values should be registered
         # immediately when they change.
-        self.io_loop.add_callback(self.subscribe_sensors(product_id))
+        self.io_loop.add_callback(lambda: self.subscribe_sensors(product_id))
         self.io_loop.start()
         # Once off sensor values
         sensors_to_query = [] # TODO:  add sensors to query on ?capture_init
