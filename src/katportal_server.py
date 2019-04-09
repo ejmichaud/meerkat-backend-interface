@@ -6,6 +6,7 @@ from katportalclient import KATPortalClient
 from katportalclient.client import SensorNotFoundError
 import redis
 from src.redis_tools import *
+from functools import partial
 
 logger = logging.getLogger('BLUSE.interface')
 
@@ -35,7 +36,6 @@ class BLKATPortalClient(object):
 
     TODO:
         1. Support thread-safe stopping of ioloop
-        2. Use websocket subscription instead of http requests?
     """
 
     VERSION = 1.0
@@ -46,6 +46,8 @@ class BLKATPortalClient(object):
         self.p = self.redis_server.pubsub(ignore_subscribe_messages=True)
         self.io_loop = io_loop = tornado.ioloop.IOLoop.current()
         self.subarray_katportals = dict() # indexed by product id's
+        # The values of the following sensors should be saved immediately when they change.
+        self.async_sensor_list = ['m012_marked_faulty', 'm015_marked_faulty'] 
 
     def MSG_TO_FUNCTION(self, msg_type):
         MSG_TO_FUNCTION_DICT = {
@@ -58,6 +60,35 @@ class BLKATPortalClient(object):
         }
         return MSG_TO_FUNCTION_DICT.get(msg_type, self._other)
 
+    def on_update_callback_fn(self, product_id, msg_dict):
+        """
+        Handler for messages published over the sensor websocket. 
+        Received sensor values stored in redis database. 
+        See also ska-sa/katportalclient.
+        """
+        for key, value in msg_dict.items():
+            if key == 'msg_data':
+                sensor_name = msg_dict['msg_data']['name']
+                sensor_value = msg_dict['msg_data']['value']
+                if sensor_name in self.async_sensor_list:
+                    key = "{}:{}".format(product_id, sensor_name)
+                    write_pair_redis(self.redis_server, key, repr(sensor_value)) 
+                    print('Sensor value stored: {} = {}'.format(sensor_name, sensor_value))            
+                else:
+                    print('Unlisted sensor; value discarded')
+
+    @tornado.gen.coroutine
+    def subscribe_sensors(self, product_id):
+        """
+        Subscribe to each sensor listed for asynchronous updates.
+        """
+        yield self.subarray_katportals[product_id].connect()
+        namespace = 'namespace_' + str(uuid.uuid4())
+        result = yield self.subarray_katportals[product_id].subscribe(namespace)
+        for sensor in self.async_sensor_list:   
+            result = yield self.subarray_katportals[product_id].set_sampling_strategies(namespace, sensor, 'event')
+            print('Subscribed to sensor: {}'.format(sensor))
+
     def start(self):
         self.p.subscribe(REDIS_CHANNELS.alerts)
         self._print_start_image()
@@ -68,7 +99,7 @@ class BLKATPortalClient(object):
                 continue
             msg_type = msg_parts[0]
             product_id = msg_parts[1]
-            self.MSG_TO_FUNCTION(msg_type)(product_id)
+            self.MSG_TO_FUNCTION(msg_type)(product_id) 
 
     def _configure(self, product_id):
         """Executes when configure request is processed
@@ -80,8 +111,7 @@ class BLKATPortalClient(object):
             None
         """
         cam_url = self.redis_server.get("{}:{}".format(product_id, 'cam:url'))
-        client = KATPortalClient(cam_url, 
-                            on_update_callback=None, logger=logger)
+        client = KATPortalClient(cam_url, on_update_callback=partial(self.on_update_callback_fn, product_id), logger=logger)
         self.subarray_katportals[product_id] = client
         logger.info("Created katportalclient object for : {}".format(product_id))
         sensors_to_query = [] # TODO: add sensors to query on ?configure
@@ -103,13 +133,18 @@ class BLKATPortalClient(object):
         schedule_blocks = self.io_loop.run_sync(lambda: self._get_future_targets(product_id))
         key = "{}:schedule_blocks".format(product_id)
         write_list_redis(self.redis_server, key, repr(schedule_blocks)) #overrides previous list
+        # Start io_loop to listen to sensors whose values should be registered
+        # immediately when they change.
+        self.io_loop.add_callback(self.subscribe_sensors(product_id))
+        self.io_loop.start()
+        # Once off sensor values
         sensors_to_query = [] # TODO:  add sensors to query on ?capture_init
         sensors_and_values = self.io_loop.run_sync(lambda: \
                 self._get_sensor_values(product_id, sensors_to_query))
         for sensor_name, value in sensors_and_values.items():
             key = "{}:{}".format(product_id, sensor_name)
             write_pair_redis(self.redis_server, key, repr(value))
-
+  
     def _capture_start(self, product_id):
         """Responds to capture-start request
 
@@ -136,10 +171,11 @@ class BLKATPortalClient(object):
         Returns:
             None, but does many things!
         """
-        msg_parts = message['data'].split(':')
-        product_id = msg_parts[1] # the element after the capture-stop identifier
-        client = self.subarray_katportals[product_id]
+        #msg_parts = message['data'].split(':')
+        #product_id = msg_parts[1] # the element after the capture-stop identifier
+        #client = self.subarray_katportals[product_id]
         # TODO: get more information?
+        print('Capture stopped')
 
     def _capture_done(self, product_id):
         """Responds to capture-done request
@@ -150,6 +186,9 @@ class BLKATPortalClient(object):
         Returns:
             None, but does many things!
         """
+        # Stop io_loop for async_sensor_list
+        self.io_loop.stop()
+        # Once-off sensors to query on ?capture_done
         sensors_to_query = [] # TODO: add sensors to query on ?capture_done
         sensors_and_values = self.io_loop.run_sync(lambda: \
                 self._get_sensor_values(product_id, sensors_to_query))
@@ -206,7 +245,9 @@ class BLKATPortalClient(object):
         sb_ids = yield client.schedule_blocks_assigned()
         blocks = []
         for sb_id in sb_ids:
-            block = yield portal_client.future_targets(sb_id)
+            # Should this be 'client' rather than 'portal_client'?
+            #block = yield portal_client.future_targets(sb_id)
+            block = yield client.future_targets(sb_id)
             blocks.append(block)
         # TODO: do something interesting with schedule blocks
         raise tornado.gen.Return(blocks)
@@ -302,4 +343,5 @@ class BLKATPortalClient(object):
 |                                                 |
 +-------------------------------------------------+
 """.format(self.VERSION))
+
 
