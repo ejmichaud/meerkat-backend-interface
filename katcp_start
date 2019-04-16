@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
+from argparse import (
+    ArgumentParser,
+    ArgumentDefaultsHelpFormatter)
 import logging
 import signal
-# import socket
 import sys
 import tornado
 
-from argparse import (ArgumentParser,
-                      ArgumentDefaultsHelpFormatter)
 from src.katcp_server import BLBackendInterface
 # from src.effelsberg.config import get_nodes
 
