@@ -46,8 +46,8 @@ class BLKATPortalClient(object):
         self.p = self.redis_server.pubsub(ignore_subscribe_messages=True)
         self.io_loop = io_loop = tornado.ioloop.IOLoop.current()
         self.subarray_katportals = dict() # indexed by product id's
-        # The values of the following sensors should be saved immediately when they change.
-        self.async_sensor_list = ['m012_marked_faulty', 'm015_marked_faulty'] #TODO: add sensors to be updated upon changing
+        self.ant_sensors = ['marked_faulty', 'data_suspect'] # sensors required from each antenna
+        self.async_sensor_list = [] # will be populated with sensors for subscription
 
     def MSG_TO_FUNCTION(self, msg_type):
         MSG_TO_FUNCTION_DICT = {
@@ -94,6 +94,25 @@ class BLKATPortalClient(object):
                 else:
                     print('Unlisted sensor; value discarded')
 
+    def gen_ant_sensor_list(self, product_id, ant_sensors):
+        """Automatically builds a list of sensor names for each antenna.
+        
+        Args:
+            product_id (str): the product id given in the ?configure request
+            ant_sensors (list): the sensors to be queried for each antenna
+
+        Returns:
+            ant_sensor_list (list): the full sensor names associated with each antenna
+        """
+        ant_sensor_list = []
+        # Add sensors specific to antenna components for each antenna:
+        ant_key = '{}:antennas'.format(product_id)
+        ant_list = self.redis_server.lrange(ant_key, 0, self.redis_server.llen(ant_key)) # list of antennas
+        for ant in ant_list:
+            for sensor in ant_sensors: 
+                ant_sensor_list.append(ant+'_'+sensor)  
+        return ant_sensor_list
+
     @tornado.gen.coroutine
     def subscribe_sensors(self, product_id):
         """Subscribes to each sensor listed for asynchronous updates.
@@ -103,8 +122,8 @@ class BLKATPortalClient(object):
 
         Returns:
             None
-
         """
+        self.async_sensor_list = self.async_sensor_list + self.gen_ant_sensor_list(product_id, self.ant_sensors)
         yield self.subarray_katportals[product_id].connect()
         namespace = 'namespace_' + str(uuid.uuid4())
         result = yield self.subarray_katportals[product_id].subscribe(namespace)
