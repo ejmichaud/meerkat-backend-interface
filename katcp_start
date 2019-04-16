@@ -12,7 +12,7 @@ from src.katcp_server import BLBackendInterface
 # from src.effelsberg.config import get_nodes
 
 
-def cli(prog):
+def cli(prog=sys.argv[0]):
     usage = "{} [options]".format(prog)
     description = 'start BLUSE KATCP server'
 
@@ -97,4 +97,4 @@ def main(ip, port, debug):
 
 
 if __name__ == "__main__":
-    cli(sys.argv[0])
+    cli()
