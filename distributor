@@ -17,12 +17,19 @@ from src import redis_tools
 
 log = logging.getLogger("BLUSE.interface")
 
-CHANNEl     = redis_tools.REDIS_CHANNELS.alerts # Redis channel to listen on
-STREAM_TYPE = 'stream_type1'                    # Type of stream to distribute
+CHANNEL     = redis_tools.REDIS_CHANNELS.alerts # Redis channel to listen on
+#STREAM_TYPE = 'stream_type1'                    # Type of stream to distribute
+STREAM_TYPE = 'cbf.antenna_channelised_voltage'  # Type of stream to distribute
 NCHANNELS   = 64                                # Number of channels to distribute into
 
 CHANNELS = ["chan{:03d}".format(n) for n in range(NCHANNELS)]
 
+def json_str_formatter(str_dict):
+    # Not sure why this is needed on certain machines
+    # There must be a better way of handling this!
+    str_dict = str_dict.replace('\'', '"') # Swap quote types for json format
+    str_dict = str_dict.replace('u', '') # Remove unicode 'u'
+    return str_dict
 
 if __name__ == "__main__":
     usage = "usage: %prog [options]"
@@ -56,14 +63,16 @@ if __name__ == "__main__":
             msg_type = msg_parts[0]
             product_id = msg_parts[1]
             if msg_type == 'configure':
-                all_streams = json.loads(re.get("{}:streams".format(product_id)))
+                all_streams = json.loads( json_str_formatter(re.get("{}:streams".format(product_id))))
+                print(all_streams)
                 streams = all_streams[STREAM_TYPE]
-                nstreams = len(streams)
-                if nstreams > NCHANNELS:
-                    log.warning("More than {} ({}) stream addresses found".format(NCHANNELS, nstreams))
-                for i in range(min(nstreams, NCHANNELS)):
-                    msg = "{}:configure:stream:{}".format(product_id, streams[i])
-                    re.publish(CHANNELS[i], msg)
+                print(streams)
+                #nstreams = len(streams)
+                #if nstreams > NCHANNELS:
+                #    log.warning("More than {} ({}) stream addresses found".format(NCHANNELS, nstreams))
+                #for i in range(min(nstreams, NCHANNELS)):
+                #    msg = "{}:configure:stream:{}".format(product_id, streams[i])
+                #    re.publish(CHANNELS[i], msg)
     except KeyboardInterrupt:
         log.info("Stopping distributor")
         sys.exit(0)
