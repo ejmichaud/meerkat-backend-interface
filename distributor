@@ -52,23 +52,26 @@ def parse_spead_addresses(spead_addrs):
     return addr_list, port
 
 
-if __name__ == "__main__":
+def cli():
     usage = "usage: %prog [options]"
     parser = OptionParser(usage=usage)
     parser.add_option('-p', '--port', dest='port', type=long,
                       help='Redis port to connect to', default=6379)
     (opts, args) = parser.parse_args()
-
     # if not opts.port:
     #     print "MissingArgument: Port number"
     #     sys.exit(-1)
 
+    main(port=opts.port)
+
+
+def main(port):
     FORMAT = "[ %(levelname)s - %(asctime)s - %(filename)s:%(lineno)s] %(message)s"
     # logger = logging.getLogger('reynard')
     logging.basicConfig(format=FORMAT)
     log.setLevel(logging.DEBUG)
     log.info("Starting distributor")
-    re = redis.StrictRedis(port=opts.port)
+    re = redis.StrictRedis(port=port)
     ps = re.pubsub(ignore_subscribe_messages=True)
     ps.subscribe(CHANNEL)
     try:
@@ -95,3 +98,7 @@ if __name__ == "__main__":
     except Exception as e:
         log.error(e)
         sys.exit(1)
+
+
+if __name__ == "__main__":
+    cli()
