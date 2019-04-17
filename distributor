@@ -3,7 +3,6 @@
 from optparse import OptionParser
 import json
 import logging
-import os
 import sys
 
 import redis
@@ -68,9 +67,6 @@ if __name__ == "__main__":
     # logger = logging.getLogger('reynard')
     logging.basicConfig(format=FORMAT)
     log.setLevel(logging.DEBUG)
-    syslog_addr = '/dev/log' if os.path.exists('/dev/log') else '/var/run/syslog'
-    handler = logging.handlers.SysLogHandler(address=syslog_addr)
-    log.addHandler(handler)
     log.info("Starting distributor")
     re = redis.StrictRedis(port=opts.port)
     ps = re.pubsub(ignore_subscribe_messages=True)

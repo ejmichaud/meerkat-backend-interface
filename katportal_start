@@ -2,7 +2,6 @@
 
 import logging
 import signal
-import os
 import sys
 
 from src.katportal_server import BLKATPortalClient
@@ -23,9 +22,6 @@ if __name__ == '__main__':
     logging.basicConfig(format=FORMAT)
     log.setLevel(logging.DEBUG)
     log.info("Starting Katportal Client")
-    syslog_addr = '/dev/log' if os.path.exists('/dev/log') else '/var/run/syslog'
-    handler = logging.handlers.SysLogHandler(address=syslog_addr)
-    log.addHandler(handler)
 
     client = BLKATPortalClient()
     signal.signal(signal.SIGINT, lambda sig, frame: on_shutdown())
