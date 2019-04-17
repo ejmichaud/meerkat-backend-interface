@@ -16,7 +16,7 @@ def on_shutdown():
     sys.exit()
 
 
-if __name__ == '__main__':
+def main():
     FORMAT = "[ %(levelname)s - %(asctime)s - %(filename)s:%(lineno)s] %(message)s"
     # logger = logging.getLogger('reynard')
     logging.basicConfig(format=FORMAT)
@@ -26,3 +26,7 @@ if __name__ == '__main__':
     client = BLKATPortalClient()
     signal.signal(signal.SIGINT, lambda sig, frame: on_shutdown())
     client.start()
+
+
+if __name__ == '__main__':
+    main()
