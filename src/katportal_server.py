@@ -20,14 +20,14 @@ class BLKATPortalClient(object):
     Yes, it's that simple. (but katportal_start does something a little fancier!)
 
     Once initialized, the client creates a Tornado ioloop and
-    a connection to the local Redis server. 
+    a connection to the local Redis server.
 
     When start() is called, a loop starts that subscribes to the 'alerts'
     channel of the Redis server. Depending on the message received, various
     processes are run (asynchronously?). These include:
         1. Creating a new KATPortalClient object specific to the
             product id we just received in a ?configure request
-        2. Querying for schedule block information when ?capture-init is 
+        2. Querying for schedule block information when ?capture-init is
             received and publishing this to Redis
         3. Querying for target information when ?capture-start is
             received and publishing this to Redis
@@ -39,7 +39,7 @@ class BLKATPortalClient(object):
     """
 
     VERSION = 1.0
-    
+
     def __init__(self):
         """Our client server to the Katportal"""
         self.redis_server = redis.StrictRedis()
@@ -70,17 +70,17 @@ class BLKATPortalClient(object):
                 continue
             msg_type = msg_parts[0]
             product_id = msg_parts[1]
-            self.MSG_TO_FUNCTION(msg_type)(product_id) 
+            self.MSG_TO_FUNCTION(msg_type)(product_id)
 
     def on_update_callback_fn(self, product_id, msg):
-        """Handler for messages published over sensor websockets. 
-        The received sensor values are stored in the redis database. 
-        
+        """Handler for messages published over sensor websockets.
+        The received sensor values are stored in the redis database.
+
         Args:
             product_id (str): the product id given in the ?configure request
             msg (dict): a dictionary containing the updated sensor information
 
-        Returns: 
+        Returns:
             None
         """
         for key, value in msg.items():
@@ -89,14 +89,14 @@ class BLKATPortalClient(object):
                 sensor_value = msg['msg_data']['value']
                 if sensor_name in self.async_sensor_list:
                     key = "{}:{}".format(product_id, sensor_name)
-                    write_pair_redis(self.redis_server, key, repr(sensor_value)) 
-                    print('Sensor value stored: {} = {}'.format(sensor_name, sensor_value))            
+                    write_pair_redis(self.redis_server, key, repr(sensor_value))
+                    print('Sensor value stored: {} = {}'.format(sensor_name, sensor_value))
                 else:
                     print('Unlisted sensor; value discarded')
 
     def gen_ant_sensor_list(self, product_id, ant_sensors):
         """Automatically builds a list of sensor names for each antenna.
-        
+
         Args:
             product_id (str): the product id given in the ?configure request
             ant_sensors (list): the sensors to be queried for each antenna
@@ -109,14 +109,14 @@ class BLKATPortalClient(object):
         ant_key = '{}:antennas'.format(product_id)
         ant_list = self.redis_server.lrange(ant_key, 0, self.redis_server.llen(ant_key)) # list of antennas
         for ant in ant_list:
-            for sensor in ant_sensors: 
-                ant_sensor_list.append(ant+'_'+sensor)  
+            for sensor in ant_sensors:
+                ant_sensor_list.append(ant+'_'+sensor)
         return ant_sensor_list
 
     @tornado.gen.coroutine
     def subscribe_sensors(self, product_id):
         """Subscribes to each sensor listed for asynchronous updates.
-        
+
         Args:
             product_id (str): the product id given in the ?configure request
 
@@ -127,7 +127,7 @@ class BLKATPortalClient(object):
         yield self.subarray_katportals[product_id].connect()
         namespace = 'namespace_' + str(uuid.uuid4())
         result = yield self.subarray_katportals[product_id].subscribe(namespace)
-        for sensor in self.async_sensor_list:   
+        for sensor in self.async_sensor_list:
             result = yield self.subarray_katportals[product_id].set_sampling_strategies(namespace, sensor, 'event')
             print('Subscribed to sensor: {}'.format(sensor))
 
@@ -175,7 +175,7 @@ class BLKATPortalClient(object):
         for sensor_name, value in sensors_and_values.items():
             key = "{}:{}".format(product_id, sensor_name)
             write_pair_redis(self.redis_server, key, repr(value))
-  
+
     def _capture_start(self, product_id):
         """Responds to capture-start request
 

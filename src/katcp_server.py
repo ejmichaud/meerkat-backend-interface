@@ -1,19 +1,19 @@
 r"""
-Adapted from the reynard package (MIT license) on June 22, 2018: 
+Adapted from the reynard package (MIT license) on June 22, 2018:
 https://github.com/ewanbarr/reynard
 
-  ___              _   _   _                      _      _    _    _            
- | _ )_ _ ___ __ _| |_| |_| |_  _ _ ___ _  _ __ _| |_   | |  (_)__| |_ ___ _ _  
- | _ \ '_/ -_) _` | / /  _| ' \| '_/ _ \ || / _` | ' \  | |__| (_-<  _/ -_) ' \ 
+  ___              _   _   _                      _      _    _    _
+ | _ )_ _ ___ __ _| |_| |_| |_  _ _ ___ _  _ __ _| |_   | |  (_)__| |_ ___ _ _
+ | _ \ '_/ -_) _` | / /  _| ' \| '_/ _ \ || / _` | ' \  | |__| (_-<  _/ -_) ' \
  |___/_| \___\__,_|_\_\\__|_||_|_| \___/\_,_\__, |_||_| |____|_/__/\__\___|_||_|
-                                            |___/                               
+                                            |___/
 
             ______________                      ,-.
            /             /|                    / \  `.  __..-,O
           /             / |                   :   \ --''_..-'.'
          /____________ /  |                   |    . .-' `. '.
         | ___________ |   |                   :     .     .`.'
-        ||           ||   |                    \     `.  /  .. 
+        ||           ||   |                    \     `.  /  ..
         ||           ||   |                     \      `.   ' .
         ||           ||   |                      `,       `.   \
         ||___________||   |                     ,|,`.        `-.\
@@ -22,10 +22,10 @@ https://github.com/ewanbarr/reynard
       ( |_____________|/             \          |__|
        \                              \         /||\
    .=======================.           \       //||\\
-   | ::::::::::::::::  ::: |            \     // || \\        
+   | ::::::::::::::::  ::: |            \     // || \\
    | ::::::::::::::[]  ::: |             \___//__||__\\___
    |   -----------     ::: |              '--------------'
-   \-----------------------  
+   \-----------------------
 """
 
 import sys
@@ -130,62 +130,62 @@ ___,-| |----''    / |         `._`-.          `----
                 n_channels, streams_json, proxy_name):
         """Receive metadata for upcoming observation.
 
-        In order to allow BLUSE to make an estimate of its ability 
-        to process a particular data product, this command should 
+        In order to allow BLUSE to make an estimate of its ability
+        to process a particular data product, this command should
         be used to configure a BLUSE instance when a new subarray is activated.
-        
+
         Args:
-            product_id (str): This is a name for the data product, 
-                    which is a useful tag to include in the data, 
-                    but should not be analysed further.  
-                    For example "array_1_bc856M4k". This value will 
-                    be unique across all subarrays. However, it is 
-                    not a globally unique identifier for the lifetime 
-                    of the telescope.  The exact same value may be provided 
+            product_id (str): This is a name for the data product,
+                    which is a useful tag to include in the data,
+                    but should not be analysed further.
+                    For example "array_1_bc856M4k". This value will
+                    be unique across all subarrays. However, it is
+                    not a globally unique identifier for the lifetime
+                    of the telescope.  The exact same value may be provided
                     at a later time when the same subarray is activated again.
-            
-            antennas_csv (str): A comma separated list of physical antenna names 
+
+            antennas_csv (str): A comma separated list of physical antenna names
                     used in particular sub-array to which the data products belongs.
-            
+
             n_channels (int): The integer number of frequency channels provided by the CBF.
-            
-            streams_json (str) is a JSON struct containing config keys and 
-                    values describing the streams.  For example: 
+
+            streams_json (str) is a JSON struct containing config keys and
+                    values describing the streams.  For example:
                     {'stream_type1': {
                     'stream_name1': 'stream_address1',
                     'stream_name2': 'stream_address2',
-                    ...}, 
+                    ...},
                  'stream_type2': {
                     'stream_name1': 'stream_address1',
                     'stream_name2': 'stream_address2',
                     ...},
                     ...}
                 The steam type keys indicate the source of the data and the type, e.g. cam.http.
-                stream_address will be a URI.  For SPEAD streams, the format will be 
-                spead://<ip>[+<count>]:<port>, representing SPEAD stream multicast groups. 
-                When a single logical stream requires too much bandwidth to accommodate 
-                as a single multicast group, the count parameter indicates the number of 
-                additional consecutively numbered multicast group ip addresses, and 
+                stream_address will be a URI.  For SPEAD streams, the format will be
+                spead://<ip>[+<count>]:<port>, representing SPEAD stream multicast groups.
+                When a single logical stream requires too much bandwidth to accommodate
+                as a single multicast group, the count parameter indicates the number of
+                additional consecutively numbered multicast group ip addresses, and
                 sharing the same UDP port number.
                 stream_name is the name used to identify the stream in CAM.
                 A Python example is shown below, for five streams:
-                One CAM stream, with type cam.http.  The camdata stream provides the 
-                connection string for katportalclient (for the subarray that this 
+                One CAM stream, with type cam.http.  The camdata stream provides the
+                connection string for katportalclient (for the subarray that this
                 BLUSE instance is being configured on).
                 One F-engine stream, with type:  cbf.antenna_channelised_voltage.
                 One X-engine stream, with type:  cbf.baseline_correlation_products.
-                Two beam streams, with type: cbf.tied_array_channelised_voltage.  
-                The stream names ending in x are horizontally polarised, and those 
+                Two beam streams, with type: cbf.tied_array_channelised_voltage.
+                The stream names ending in x are horizontally polarised, and those
                 ending in y are vertically polarised.
 
-            proxy_name (str): The CAM name for the instance of the BLUSE data 
-                proxy that is being configured.  For example, "BLUSE_3".  This 
-                can be used to query sensors on the correct proxy.  Note that for 
+            proxy_name (str): The CAM name for the instance of the BLUSE data
+                proxy that is being configured.  For example, "BLUSE_3".  This
+                can be used to query sensors on the correct proxy.  Note that for
                 BLUSE there will only be a single instance of the proxy in a subarray.
 
         Returns:
             None... but replies with "ok" or "fail" and logs either info or error
-            
+
         Writes:
             - subbarry1_abc65555:timestamp" -> "1534657577373.23423"  :: Redis String
             - subarray1_abc65555:antennas" -> [1,2,3,4] :: Redis List
@@ -196,7 +196,7 @@ ___,-| |----''    / |         `._`-.          `----
 
         Publishes:
             redis-channel: 'alerts' <-- "configure"
-        
+
         Examples:
             > ?configure array_1_bc856M4k a1,a2,a3,a4 128000 {"cam.http":{"camdata":"http://monctl.devnmk.camlab.kat.ac.za/api/client/2"},"stream_type2":{"stream_name1":"stream_address1","stream_name2":"stream_address2"}} BLUSE_3
         """
@@ -226,7 +226,7 @@ ___,-| |----''    / |         `._`-.          `----
     @return_reply()
     def request_capture_init(self, req, product_id):
         """Signals that an observation will start soon
-        
+
             Publishes a message to the 'alerts' channel of the form:
                 capture-init:product_id
             The product_id should match what what was sent in the ?configure request
@@ -245,7 +245,7 @@ ___,-| |----''    / |         `._`-.          `----
     @return_reply()
     def request_capture_start(self, req, product_id):
         """Signals that an observation is starting now
-        
+
             Publishes a message to the 'alerts' channel of the form:
                 capture-start:product_id
             The product_id should match what what was sent in the ?configure request
@@ -264,7 +264,7 @@ ___,-| |----''    / |         `._`-.          `----
     @return_reply()
     def request_capture_stop(self, req, product_id):
         """Signals that an observation is has stopped
-        
+
             Publishes a message to the 'alerts' channel of the form:
                 capture-stop:product_id
             The product_id should match what what was sent in the ?configure request
@@ -283,7 +283,7 @@ ___,-| |----''    / |         `._`-.          `----
     @return_reply()
     def request_capture_done(self, req, product_id):
         """Signals that an observation has finished
-        
+
             Publishes a message to the 'alerts' channel of the form:
                 capture-done:product_id
             The product_id should match what what was sent in the ?configure request
@@ -291,7 +291,7 @@ ___,-| |----''    / |         `._`-.          `----
             This alert should notify all backend processes (such as beamformer)
             that their data streams are ending
         """
-        
+
         msg = "capture-done:{}".format(product_id)
         success = publish_to_redis(self.redis_server, REDIS_CHANNELS.alerts, msg)
         if success:
@@ -303,13 +303,13 @@ ___,-| |----''    / |         `._`-.          `----
     @return_reply()
     def request_deconfigure(self, req, product_id):
         """Signals that the current data product is done.
-        
-            Deconfigure the BLUSE instance that was created by the call 
-            to ?configure with the corresponding product_id. Note:  CAM is 
-            expected to have sent a ?capture-done request before deconfiguring, 
-            in order to ensure that all data has been written. If BLUSE uses an 
-            instance of katportalclient to get information from CAM for this 
-            BLUSE instance, then it should disconnect at this time. 
+
+            Deconfigure the BLUSE instance that was created by the call
+            to ?configure with the corresponding product_id. Note:  CAM is
+            expected to have sent a ?capture-done request before deconfiguring,
+            in order to ensure that all data has been written. If BLUSE uses an
+            instance of katportalclient to get information from CAM for this
+            BLUSE instance, then it should disconnect at this time.
 
             Publishes a message to the 'alerts' channel of the form:
                 deconfigure:product_id
@@ -324,7 +324,7 @@ ___,-| |----''    / |         `._`-.          `----
             return ("ok",)
         else:
             return ("fail", "Failed to publish to our local redis server")
-    
+
     def setup_sensors(self):
         """
         @brief    Set up monitoring sensors.
@@ -371,7 +371,7 @@ ___,-| |----''    / |         `._`-.          `----
 
         TODO:
             - Call halt method on superclass to avoid copy paste
-                Doing this caused an issue: 
+                Doing this caused an issue:
                     File "/Users/Eric/Berkeley/seti/packages/meerkat/lib/python2.7/site-packages/katcp/server.py", line 1102, in handle_request
                         assert (reply.mtype == Message.REPLY)
                     AttributeError: 'NoneType' object has no attribute 'mtype'
@@ -419,7 +419,7 @@ ___,-| |----''    / |         `._`-.          `----
      +   .   .   : . ::. :.:. .:.|\  .:/|
      .         +   .  .  ...:: ..|  --.:|
 .      . . .   .  .  . ... :..:.."(  ..)"
- .   .       .      :  .   .: ::/  .  .::\            
+ .   .       .      :  .   .: ::/  .  .::\
         """)
 
 

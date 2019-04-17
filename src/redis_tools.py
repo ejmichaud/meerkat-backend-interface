@@ -15,10 +15,10 @@ def write_pair_redis(server, key, value, expiration=None):
         key (str): the key of the key-value pair
         value (str): the value of the key-value pair
         expiration (number): number of seconds before key expiration
-    
+
     Returns:
         True if success, False otherwise, and logs either an 'debug' or 'error' message
-    
+
     Examples:
         >>> server = BLBackendInterface('localhost', 5000)
         >>> server._write_to_redis("aliens:found", "yes")
@@ -36,7 +36,7 @@ def write_list_redis(server, key, values):
 
         If a list already exists at the given key, then
         delete it and rpush values to a new empty list
-        
+
         Args:
             server (redis.StrictRedis) a redis-py redis server object
             key (str): key identifying the list
@@ -63,10 +63,10 @@ def publish_to_redis(server, channel, message):
         server (redis.StrictRedis) a redis-py redis server object
         channel (str): the name of the channel to publish to
         message (str): the message to be published
-    
+
     Returns:
         True if success, False otherwise, and logs either an 'debug' or 'error' message
-    
+
     Examples:
         >>> server = BLBackendInterface('localhost', 5000)
         >>> server._publish_to_redis("alerts", "Found aliens!!!")
