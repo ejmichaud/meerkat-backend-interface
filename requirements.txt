@@ -12,7 +12,7 @@ future==0.16.0
 futures==3.2.0
 idna==2.7
 ipaddress==1.0.22
-Jinja2==2.10
+Jinja2>=2.10.1
 katcp==0.6.2
 lxml==4.2.3
 MarkupSafe==1.0
@@ -23,7 +23,7 @@ psutil==5.4.6
 pyparsing==2.2.0
 pyperclip==1.6.2
 redis==2.10.6
-requests==2.19.1
+requests>=2.20.0
 singledispatch==3.4.0.3
 six==1.11.0
 slacker==0.9.65
