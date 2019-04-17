@@ -12,7 +12,6 @@ from meerkat_backend_interface.logger import log
 
 
 CHANNEL     = redis_tools.REDIS_CHANNELS.alerts  # Redis channel to listen on
-#STREAM_TYPE = 'stream_type1'                    # Type of stream to distribute
 STREAM_TYPE = 'cbf.antenna_channelised_voltage'  # Type of stream to distribute
 NCHANNELS   = 64                                 # Number of channels to distribute into
 
@@ -20,14 +19,30 @@ CHANNELS = ["chan{:03d}".format(n) for n in range(NCHANNELS)]
 
 
 def json_str_formatter(str_dict):
-    # Not sure why this is needed on certain machines
-    # There must be a better way of handling this!
+    """Formatting for json.loads
+
+    Args:
+        str_dict (str): str containing dict of spead streams (received on ?configure).
+
+    Returns:
+        str_dict (str): str containing dict of spead streams, formatted for use with json.loads
+    """
+    # Is there a better way of doing this?
     str_dict = str_dict.replace('\'', '"')  # Swap quote types for json format
     str_dict = str_dict.replace('u', '')  # Remove unicode 'u'
     return str_dict
 
 
 def create_ip_list(addr0, n_addrs):
+    """Creates list of IP multicast subscription addresses.
+
+    Args:
+        addr0 (str): first IP address in the list.
+        n_addrs (int): number of consecutive IP addresses for subscription.
+
+    Returns:
+        addr_list (list): list of IP addresses for subscription.
+    """
     prefix, suffix0 = addr0.rsplit('.', 1)
     addr_list = [addr0]
     for i in range(1, n_addrs):
@@ -36,9 +51,15 @@ def create_ip_list(addr0, n_addrs):
 
 
 def parse_spead_addresses(spead_addrs):
-    """Parses spead address data
+    """Parses spead addresses given in the format: spead://<ip>[+<count>]:<port>
+    Assumes this format.
 
-    Warning: Assums format of spead addresses as delivered on ?configure remains constant.
+    Args:
+        spead_addrs (str): string containing spead IP addresses in the format above.
+
+    Returns:
+        addr_list (list): list of spead stream IP addresses for subscription.
+        port (int): port number.
     """
     addrs = spead_addrs.split('/')[-1]
     addrs, port = addrs.split(':')
@@ -49,7 +70,7 @@ def parse_spead_addresses(spead_addrs):
     except ValueError:
         n_addrs = 1
         addr_list = [addrs]
-    return addr_list, port
+    return addr_list, int(port)
 
 
 def cli():
