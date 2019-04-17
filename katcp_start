@@ -9,7 +9,6 @@ import sys
 import tornado
 
 from src.katcp_server import BLBackendInterface
-# from src.effelsberg.config import get_nodes
 
 
 def cli(prog=sys.argv[0]):
@@ -86,11 +85,6 @@ def main(ip, port, debug):
     def start():
         server.start()
         log.info("Listening at {0}, Ctrl-C to terminate server".format(server.bind_address))
-        # nodes = get_nodes(opts.nodeset)
-        # for node in nodes:
-        #     ip = socket.gethostbyname(node["host"])
-        #     print node["host"],ip,node["port"]
-        #     server._add_node(node["host"],ip,node["port"])
 
     ioloop.add_callback(start)
     ioloop.start()
