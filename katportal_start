@@ -18,7 +18,6 @@ def on_shutdown():
 
 def main():
     FORMAT = "[ %(levelname)s - %(asctime)s - %(filename)s:%(lineno)s] %(message)s"
-    # logger = logging.getLogger('reynard')
     logging.basicConfig(format=FORMAT)
     log.setLevel(logging.DEBUG)
     log.info("Starting Katportal Client")
