@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 
-import logging
 import signal
 import sys
 
 from src.katportal_server import BLKATPortalClient
-
-log = logging.getLogger("BLUSE.interface")
+from src.logger import log, set_logger
 
 
 def on_shutdown():
@@ -17,9 +15,7 @@ def on_shutdown():
 
 
 def main():
-    FORMAT = "[ %(levelname)s - %(asctime)s - %(filename)s:%(lineno)s] %(message)s"
-    logging.basicConfig(format=FORMAT)
-    log.setLevel(logging.DEBUG)
+    log = set_logger()
     log.info("Starting Katportal Client")
 
     client = BLKATPortalClient()

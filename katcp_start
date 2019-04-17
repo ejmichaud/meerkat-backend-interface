@@ -9,6 +9,7 @@ import sys
 import tornado
 
 from src.katcp_server import BLBackendInterface
+from src.logger import set_logger
 
 
 def cli(prog=sys.argv[0]):
@@ -47,16 +48,6 @@ def cli(prog=sys.argv[0]):
 
     args = parser.parse_args()
     main(ip=args.ip, port=args.port, debug=args.debug)
-
-
-# Set up logging to console and file.
-def set_logger(log_level=logging.DEBUG):
-    FORMAT = "[ %(levelname)s - %(asctime)s - %(filename)s:%(lineno)s] %(message)s"
-    logging.basicConfig(format=FORMAT)
-    log = logging.getLogger("BLUSE.interface")
-    log.setLevel(log_level)
-
-    return log
 
 
 @tornado.gen.coroutine

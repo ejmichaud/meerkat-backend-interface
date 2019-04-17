@@ -31,7 +31,6 @@ https://github.com/ewanbarr/reynard
 from __future__ import print_function
 
 import sys
-import logging
 import json
 import time
 from katcp import Sensor, AsyncDeviceServer, AsyncReply
@@ -45,7 +44,7 @@ from redis_tools import REDIS_CHANNELS, write_pair_redis, write_list_redis, publ
 from concurrent.futures import Future
 from tornado import gen
 
-log = logging.getLogger("BLUSE.interface")
+from .logger import log
 
 
 class BLBackendInterface(AsyncDeviceServer):

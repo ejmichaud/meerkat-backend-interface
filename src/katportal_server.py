@@ -1,6 +1,5 @@
 from __future__ import print_function
 
-import logging
 import tornado.gen
 import uuid
 from katportalclient import KATPortalClient
@@ -9,7 +8,7 @@ import redis
 from src.redis_tools import *
 from functools import partial
 
-logger = logging.getLogger('BLUSE.interface')
+from .logger import log as logger
 
 
 class BLKATPortalClient(object):

@@ -8,8 +8,8 @@ import sys
 import redis
 
 from src import redis_tools
+from src.logger import log
 
-log = logging.getLogger("BLUSE.interface")
 
 CHANNEL     = redis_tools.REDIS_CHANNELS.alerts  # Redis channel to listen on
 #STREAM_TYPE = 'stream_type1'                    # Type of stream to distribute

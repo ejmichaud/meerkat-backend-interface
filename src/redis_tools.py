@@ -1,6 +1,4 @@
-import logging
-
-log = logging.getLogger("BLUSE.interface")
+from .logger import log
 
 
 class REDIS_CHANNELS:
