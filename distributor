@@ -31,6 +31,29 @@ def json_str_formatter(str_dict):
     str_dict = str_dict.replace('u', '') # Remove unicode 'u'
     return str_dict
 
+def create_ip_list(addr0, n_addrs):
+    prefix, suffix0 = addr0.rsplit('.', 1)
+    addr_list = [addr0] 
+    for i in range(1, n_addrs):
+        addr_list.append(prefix + '.{}'.format(i + int(suffix0)))
+    return addr_list
+
+def parse_spead_addresses(spead_addrs):
+    """Parses spead address data
+
+    Warning: Assums format of spead addresses as delivered on ?configure remains constant. 
+    """
+    addrs = spead_addrs.split('/')[-1]
+    addrs, port = addrs.split(':')
+    try:
+        addr0, n_addrs = addrs.split('+')
+        n_addrs = int(n_addrs)+1
+        addr_list = create_ip_list(addr0, n_addrs)
+    except ValueError:
+        n_addrs = 1
+        addr_list = [addrs]
+    return addr_list, port
+
 if __name__ == "__main__":
     usage = "usage: %prog [options]"
     parser = OptionParser(usage=usage)
@@ -50,7 +73,6 @@ if __name__ == "__main__":
     handler = logging.handlers.SysLogHandler(address=syslog_addr) 
     log.addHandler(handler)
     log.info("Starting distributor")
-
     re = redis.StrictRedis(port=opts.port)
     ps = re.pubsub(ignore_subscribe_messages=True)
     ps.subscribe(CHANNEL)
@@ -64,15 +86,14 @@ if __name__ == "__main__":
             product_id = msg_parts[1]
             if msg_type == 'configure':
                 all_streams = json.loads( json_str_formatter(re.get("{}:streams".format(product_id))))
-                print(all_streams)
                 streams = all_streams[STREAM_TYPE]
-                print(streams)
-                #nstreams = len(streams)
-                #if nstreams > NCHANNELS:
-                #    log.warning("More than {} ({}) stream addresses found".format(NCHANNELS, nstreams))
-                #for i in range(min(nstreams, NCHANNELS)):
-                #    msg = "{}:configure:stream:{}".format(product_id, streams[i])
-                #    re.publish(CHANNELS[i], msg)
+                addr_list, port = parse_spead_addresses(streams.values()[0])
+                nstreams = len(addr_list)
+                if nstreams > NCHANNELS:
+                    log.warning("More than {} ({}) stream addresses found".format(NCHANNELS, nstreams))
+                for i in range(min(nstreams, NCHANNELS)):
+                    msg = "{}:configure:stream:{}".format(product_id, addr_list[i])
+                    re.publish(CHANNELS[i], msg)
     except KeyboardInterrupt:
         log.info("Stopping distributor")
         sys.exit(0)
