@@ -28,25 +28,25 @@ https://github.com/ewanbarr/reynard
    \-----------------------
 """
 
+from __future__ import print_function
+
 import sys
 import logging
-import socket
 import json
 import time
-from tornado.gen import coroutine
 from katcp import Sensor, AsyncDeviceServer, AsyncReply
-from katcp.kattypes import request, return_reply, Int, Str, Discrete
-from reynard.utils import pack_dict, unpack_dict
+from katcp.kattypes import request, return_reply, Int, Str
+from reynard.utils import unpack_dict
 
 import redis
 from redis_tools import REDIS_CHANNELS, write_pair_redis, write_list_redis, publish_to_redis
-from slack_tools import notify_slack
 
 # to handle halt request
 from concurrent.futures import Future
 from tornado import gen
 
 log = logging.getLogger("BLUSE.interface")
+
 
 class BLBackendInterface(AsyncDeviceServer):
     """Breakthrough Listen's KATCP Server Backend Interface
@@ -79,7 +79,6 @@ class BLBackendInterface(AsyncDeviceServer):
     BUILD_INFO = ("BLUSE-katcp-implementation", 1, 0, "rc?")
     DEVICE_STATUSES = ["ok", "fail", "degraded"]
 
-
     def __init__(self, server_host, server_port):
         self.port = server_port
         self.redis_server = redis.StrictRedis()
@@ -94,7 +93,7 @@ class BLBackendInterface(AsyncDeviceServer):
         set up.
         """
         super(BLBackendInterface, self).start()
-        print (R"""
+        print(R"""
                       ,'''''-._
                      ;  ,.  <> `-._
                      ;  \'   _,--'"
@@ -126,8 +125,8 @@ ___,-| |----''    / |         `._`-.          `----
 
     @request(Str(), Str(), Int(), Str(), Str())
     @return_reply()
-    def request_configure(self, req, product_id, antennas_csv, \
-                n_channels, streams_json, proxy_name):
+    def request_configure(self, req, product_id, antennas_csv,
+                          n_channels, streams_json, proxy_name):
         """Receive metadata for upcoming observation.
 
         In order to allow BLUSE to make an estimate of its ability
@@ -346,14 +345,14 @@ ___,-| |----''    / |         `._`-.          `----
         self._local_time_synced = Sensor.boolean(
             "local-time-synced",
             description="Indicates BLUSE is NTP syncronised.",
-            default=True, # TODO: implement actual NTP synchronization request
+            default=True,  # TODO: implement actual NTP synchronization request
             initial_status=Sensor.NOMINAL)
         self.add_sensor(self._local_time_synced)
 
         self._version = Sensor.string(
             "version",
             description="Reports the current BLUSE version",
-            default=str(self.VERSION_INFO[1:]).strip('()').replace(' ', '').replace(",", '.'), # e.g. '1.0'
+            default=str(self.VERSION_INFO[1:]).strip('()').replace(' ', '').replace(",", '.'),  # e.g. '1.0'
             initial_status=Sensor.NOMINAL)
         self.add_sensor(self._version)
 
@@ -421,5 +420,3 @@ ___,-| |----''    / |         `._`-.          `----
 .      . . .   .  .  . ... :..:.."(  ..)"
  .   .       .      :  .   .: ::/  .  .::\
         """)
-
-

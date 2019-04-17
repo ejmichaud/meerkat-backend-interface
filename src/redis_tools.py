@@ -1,11 +1,12 @@
 import logging
-import redis
 
 log = logging.getLogger("BLUSE.interface")
+
 
 class REDIS_CHANNELS:
     """The redis channels that may be published to"""
     alerts = "alerts"
+
 
 def write_pair_redis(server, key, value, expiration=None):
     """Creates a key-value pair self.redis_server's redis-server.
@@ -31,6 +32,7 @@ def write_pair_redis(server, key, value, expiration=None):
         log.error("Failed to create redis key/value pair")
         return False
 
+
 def write_list_redis(server, key, values):
     """Creates a new list and rpushes values to it
 
@@ -55,6 +57,7 @@ def write_list_redis(server, key, values):
     except:
         log.error("Failed to rpush to {}".format(key))
         return False
+
 
 def publish_to_redis(server, channel, message):
     """Publishes a message to a channel in self.redis_server's redis-server.
