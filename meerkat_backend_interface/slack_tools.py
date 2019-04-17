@@ -1,6 +1,7 @@
 import os
 import slacker
 
+
 def notify_slack(message, channel='#active_observations'):
     """Publishes message to slack channel
 

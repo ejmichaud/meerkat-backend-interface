@@ -1,82 +1,80 @@
 #!/usr/bin/env python
 
-# import signal
-import sys
-import os
-import logging
-import logging.handlers
-import json
-
-import time #for testing purposes
-
-import socket
 from optparse import OptionParser
+import json
+import logging
+import sys
 
 import redis
-from src import redis_tools
 
-log = logging.getLogger("BLUSE.interface")
+from meerkat_backend_interface import redis_tools
+from meerkat_backend_interface.logger import log
 
-CHANNEL     = redis_tools.REDIS_CHANNELS.alerts # Redis channel to listen on
+
+CHANNEL     = redis_tools.REDIS_CHANNELS.alerts  # Redis channel to listen on
 #STREAM_TYPE = 'stream_type1'                    # Type of stream to distribute
 STREAM_TYPE = 'cbf.antenna_channelised_voltage'  # Type of stream to distribute
-NCHANNELS   = 64                                # Number of channels to distribute into
+NCHANNELS   = 64                                 # Number of channels to distribute into
 
 CHANNELS = ["chan{:03d}".format(n) for n in range(NCHANNELS)]
+
 
 def json_str_formatter(str_dict):
     # Not sure why this is needed on certain machines
     # There must be a better way of handling this!
-    str_dict = str_dict.replace('\'', '"') # Swap quote types for json format
-    str_dict = str_dict.replace('u', '') # Remove unicode 'u'
+    str_dict = str_dict.replace('\'', '"')  # Swap quote types for json format
+    str_dict = str_dict.replace('u', '')  # Remove unicode 'u'
     return str_dict
+
 
 def create_ip_list(addr0, n_addrs):
     prefix, suffix0 = addr0.rsplit('.', 1)
-    addr_list = [addr0] 
+    addr_list = [addr0]
     for i in range(1, n_addrs):
         addr_list.append(prefix + '.{}'.format(i + int(suffix0)))
     return addr_list
 
+
 def parse_spead_addresses(spead_addrs):
     """Parses spead address data
 
-    Warning: Assums format of spead addresses as delivered on ?configure remains constant. 
+    Warning: Assums format of spead addresses as delivered on ?configure remains constant.
     """
     addrs = spead_addrs.split('/')[-1]
     addrs, port = addrs.split(':')
     try:
         addr0, n_addrs = addrs.split('+')
-        n_addrs = int(n_addrs)+1
+        n_addrs = int(n_addrs) + 1
         addr_list = create_ip_list(addr0, n_addrs)
     except ValueError:
         n_addrs = 1
         addr_list = [addrs]
     return addr_list, port
 
-if __name__ == "__main__":
+
+def cli():
     usage = "usage: %prog [options]"
     parser = OptionParser(usage=usage)
     parser.add_option('-p', '--port', dest='port', type=long,
-        help='Redis port to connect to', default=6379)
+                      help='Redis port to connect to', default=6379)
     (opts, args) = parser.parse_args()
-
     # if not opts.port:
     #     print "MissingArgument: Port number"
     #     sys.exit(-1)
 
+    main(port=opts.port)
+
+
+def main(port):
     FORMAT = "[ %(levelname)s - %(asctime)s - %(filename)s:%(lineno)s] %(message)s"
     # logger = logging.getLogger('reynard')
     logging.basicConfig(format=FORMAT)
     log.setLevel(logging.DEBUG)
-    syslog_addr = '/dev/log' if os.path.exists('/dev/log') else '/var/run/syslog'
-    handler = logging.handlers.SysLogHandler(address=syslog_addr) 
-    log.addHandler(handler)
     log.info("Starting distributor")
-    re = redis.StrictRedis(port=opts.port)
+    re = redis.StrictRedis(port=port)
     ps = re.pubsub(ignore_subscribe_messages=True)
     ps.subscribe(CHANNEL)
-    try: 
+    try:
         for message in ps.listen():
             msg_parts = message['data'].split(':')
             if len(msg_parts) != 2:
@@ -85,7 +83,7 @@ if __name__ == "__main__":
             msg_type = msg_parts[0]
             product_id = msg_parts[1]
             if msg_type == 'configure':
-                all_streams = json.loads( json_str_formatter(re.get("{}:streams".format(product_id))))
+                all_streams = json.loads(json_str_formatter(re.get("{}:streams".format(product_id))))
                 streams = all_streams[STREAM_TYPE]
                 addr_list, port = parse_spead_addresses(streams.values()[0])
                 nstreams = len(addr_list)
@@ -100,3 +98,7 @@ if __name__ == "__main__":
     except Exception as e:
         log.error(e)
         sys.exit(1)
+
+
+if __name__ == "__main__":
+    cli()

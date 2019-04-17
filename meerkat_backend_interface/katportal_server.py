@@ -1,5 +1,5 @@
-import logging
-import argparse
+from __future__ import print_function
+
 import tornado.gen
 import uuid
 from katportalclient import KATPortalClient
@@ -8,7 +8,8 @@ import redis
 from src.redis_tools import *
 from functools import partial
 
-logger = logging.getLogger('BLUSE.interface')
+from .logger import log as logger
+
 
 class BLKATPortalClient(object):
     """Our client server to the Katportal
@@ -20,14 +21,14 @@ class BLKATPortalClient(object):
     Yes, it's that simple. (but katportal_start does something a little fancier!)
 
     Once initialized, the client creates a Tornado ioloop and
-    a connection to the local Redis server. 
+    a connection to the local Redis server.
 
     When start() is called, a loop starts that subscribes to the 'alerts'
     channel of the Redis server. Depending on the message received, various
     processes are run (asynchronously?). These include:
         1. Creating a new KATPortalClient object specific to the
             product id we just received in a ?configure request
-        2. Querying for schedule block information when ?capture-init is 
+        2. Querying for schedule block information when ?capture-init is
             received and publishing this to Redis
         3. Querying for target information when ?capture-start is
             received and publishing this to Redis
@@ -39,15 +40,15 @@ class BLKATPortalClient(object):
     """
 
     VERSION = 1.0
-    
+
     def __init__(self):
         """Our client server to the Katportal"""
         self.redis_server = redis.StrictRedis()
         self.p = self.redis_server.pubsub(ignore_subscribe_messages=True)
         self.io_loop = io_loop = tornado.ioloop.IOLoop.current()
-        self.subarray_katportals = dict() # indexed by product id's
-        self.ant_sensors = ['marked_faulty', 'data_suspect'] # sensors required from each antenna
-        self.async_sensor_list = [] # will be populated with sensors for subscription
+        self.subarray_katportals = dict()  # indexed by product id's
+        self.ant_sensors = ['marked_faulty', 'data_suspect']  # sensors required from each antenna
+        self.async_sensor_list = []  # will be populated with sensors for subscription
 
     def MSG_TO_FUNCTION(self, msg_type):
         MSG_TO_FUNCTION_DICT = {
@@ -70,17 +71,17 @@ class BLKATPortalClient(object):
                 continue
             msg_type = msg_parts[0]
             product_id = msg_parts[1]
-            self.MSG_TO_FUNCTION(msg_type)(product_id) 
+            self.MSG_TO_FUNCTION(msg_type)(product_id)
 
     def on_update_callback_fn(self, product_id, msg):
-        """Handler for messages published over sensor websockets. 
-        The received sensor values are stored in the redis database. 
-        
+        """Handler for messages published over sensor websockets.
+        The received sensor values are stored in the redis database.
+
         Args:
             product_id (str): the product id given in the ?configure request
             msg (dict): a dictionary containing the updated sensor information
 
-        Returns: 
+        Returns:
             None
         """
         for key, value in msg.items():
@@ -89,14 +90,14 @@ class BLKATPortalClient(object):
                 sensor_value = msg['msg_data']['value']
                 if sensor_name in self.async_sensor_list:
                     key = "{}:{}".format(product_id, sensor_name)
-                    write_pair_redis(self.redis_server, key, repr(sensor_value)) 
-                    print('Sensor value stored: {} = {}'.format(sensor_name, sensor_value))            
+                    write_pair_redis(self.redis_server, key, repr(sensor_value))
+                    print('Sensor value stored: {} = {}'.format(sensor_name, sensor_value))
                 else:
                     print('Unlisted sensor; value discarded')
 
     def gen_ant_sensor_list(self, product_id, ant_sensors):
         """Automatically builds a list of sensor names for each antenna.
-        
+
         Args:
             product_id (str): the product id given in the ?configure request
             ant_sensors (list): the sensors to be queried for each antenna
@@ -107,16 +108,16 @@ class BLKATPortalClient(object):
         ant_sensor_list = []
         # Add sensors specific to antenna components for each antenna:
         ant_key = '{}:antennas'.format(product_id)
-        ant_list = self.redis_server.lrange(ant_key, 0, self.redis_server.llen(ant_key)) # list of antennas
+        ant_list = self.redis_server.lrange(ant_key, 0, self.redis_server.llen(ant_key))  # list of antennas
         for ant in ant_list:
-            for sensor in ant_sensors: 
-                ant_sensor_list.append(ant+'_'+sensor)  
+            for sensor in ant_sensors:
+                ant_sensor_list.append(ant + '_' + sensor)
         return ant_sensor_list
 
     @tornado.gen.coroutine
     def subscribe_sensors(self, product_id):
         """Subscribes to each sensor listed for asynchronous updates.
-        
+
         Args:
             product_id (str): the product id given in the ?configure request
 
@@ -127,7 +128,7 @@ class BLKATPortalClient(object):
         yield self.subarray_katportals[product_id].connect()
         namespace = 'namespace_' + str(uuid.uuid4())
         result = yield self.subarray_katportals[product_id].subscribe(namespace)
-        for sensor in self.async_sensor_list:   
+        for sensor in self.async_sensor_list:
             result = yield self.subarray_katportals[product_id].set_sampling_strategies(namespace, sensor, 'event')
             print('Subscribed to sensor: {}'.format(sensor))
 
@@ -145,9 +146,9 @@ class BLKATPortalClient(object):
         #client = KATPortalClient(cam_url, on_update_callback=lambda x: self.on_update_callback_fn(product_id), logger=logger)
         self.subarray_katportals[product_id] = client
         logger.info("Created katportalclient object for : {}".format(product_id))
-        sensors_to_query = [] # TODO: add sensors to query on ?configure
-        sensors_and_values = self.io_loop.run_sync(lambda: \
-                self._get_sensor_values(product_id, sensors_to_query))
+        sensors_to_query = []  # TODO: add sensors to query on ?configure
+        sensors_and_values = self.io_loop.run_sync(
+            lambda: self._get_sensor_values(product_id, sensors_to_query))
         for sensor_name, value in sensors_and_values.items():
             key = "{}:{}".format(product_id, sensor_name)
             write_pair_redis(self.redis_server, key, repr(value))
@@ -163,19 +164,19 @@ class BLKATPortalClient(object):
         """
         schedule_blocks = self.io_loop.run_sync(lambda: self._get_future_targets(product_id))
         key = "{}:schedule_blocks".format(product_id)
-        write_list_redis(self.redis_server, key, repr(schedule_blocks)) #overrides previous list
+        write_list_redis(self.redis_server, key, repr(schedule_blocks))  # overrides previous list
         # Start io_loop to listen to sensors whose values should be registered
         # immediately when they change.
         self.io_loop.add_callback(lambda: self.subscribe_sensors(product_id))
         self.io_loop.start()
         # Once off sensor values
-        sensors_to_query = [] # TODO:  add sensors to query on ?capture_init
-        sensors_and_values = self.io_loop.run_sync(lambda: \
-                self._get_sensor_values(product_id, sensors_to_query))
+        sensors_to_query = []  # TODO: add sensors to query on ?capture_init
+        sensors_and_values = self.io_loop.run_sync(
+            lambda: self._get_sensor_values(product_id, sensors_to_query))
         for sensor_name, value in sensors_and_values.items():
             key = "{}:{}".format(product_id, sensor_name)
             write_pair_redis(self.redis_server, key, repr(value))
-  
+
     def _capture_start(self, product_id):
         """Responds to capture-start request
 
@@ -187,8 +188,8 @@ class BLKATPortalClient(object):
         """
         # TODO: get more information?
         sensors_to_query = ['target', 'pos_request_base_ra', 'pos_request_base_dec', 'weight']
-        sensors_and_values = self.io_loop.run_sync(lambda: \
-                self._get_sensor_values(product_id, sensors_to_query))
+        sensors_and_values = self.io_loop.run_sync(
+            lambda: self._get_sensor_values(product_id, sensors_to_query))
         for sensor_name, value in sensors_and_values.items():
             key = "{}:{}".format(product_id, sensor_name)
             write_pair_redis(self.redis_server, key, repr(value))
@@ -220,9 +221,9 @@ class BLKATPortalClient(object):
         # Stop io_loop for async_sensor_list
         self.io_loop.stop()
         # Once-off sensors to query on ?capture_done
-        sensors_to_query = [] # TODO: add sensors to query on ?capture_done
-        sensors_and_values = self.io_loop.run_sync(lambda: \
-                self._get_sensor_values(product_id, sensors_to_query))
+        sensors_to_query = []  # TODO: add sensors to query on ?capture_done
+        sensors_and_values = self.io_loop.run_sync(
+            lambda: self._get_sensor_values(product_id, sensors_to_query))
         for sensor_name, value in sensors_and_values.items():
             key = "{}:{}".format(product_id, sensor_name)
             write_pair_redis(self.redis_server, key, repr(value))
@@ -236,9 +237,9 @@ class BLKATPortalClient(object):
         Returns:
             None
         """
-        sensors_to_query = [] # TODO: add sensors to query on ?deconfigure
-        sensors_and_values = self.io_loop.run_sync(lambda: \
-                self._get_sensor_values(product_id, sensors_to_query))
+        sensors_to_query = []  # TODO: add sensors to query on ?deconfigure
+        sensors_and_values = self.io_loop.run_sync(
+            lambda: self._get_sensor_values(product_id, sensors_to_query))
         for sensor_name, value in sensors_and_values.items():
             key = "{}:{}".format(product_id, sensor_name)
             write_pair_redis(self.redis_server, key, repr(value))
@@ -308,11 +309,10 @@ class BLKATPortalClient(object):
         else:
             for sensor_name in sensor_names:
                 try:
-                    sensor_value = yield client.sensor_value(sensor_name,
-                                                include_value_ts=True)
+                    sensor_value = yield client.sensor_value(sensor_name, include_value_ts=True)
                     sensors_and_values[sensor_name] = self._convert_SensorSampleValueTs_to_dict(sensor_value)
                 except SensorNotFoundError as exc:
-                    print "\n", exc
+                    print("\n", exc)
                     continue
             # TODO: get more information using the client?
         raise tornado.gen.Return(sensors_and_values)
@@ -347,9 +347,8 @@ class BLKATPortalClient(object):
         sensor_value_dict['status'] = sensor_value.status
         return sensor_value_dict
 
-
     def _print_start_image(self):
-        print (R"""
+        print(R"""
        ________________________________
       /                                "-_
      /      .  |  .                       \
@@ -374,5 +373,3 @@ class BLKATPortalClient(object):
 |                                                 |
 +-------------------------------------------------+
 """.format(self.VERSION))
-
-
