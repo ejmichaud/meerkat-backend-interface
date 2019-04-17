@@ -8,8 +8,8 @@ import signal
 import sys
 import tornado
 
-from src.katcp_server import BLBackendInterface
-from src.logger import set_logger
+from meerkat_backend_interface.katcp_server import BLBackendInterface
+from meerkat_backend_interface.logger import set_logger
 
 
 def cli(prog=sys.argv[0]):

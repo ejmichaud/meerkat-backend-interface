@@ -3,8 +3,8 @@
 import signal
 import sys
 
-from src.katportal_server import BLKATPortalClient
-from src.logger import log, set_logger
+from meerkat_backend_interface.katportal_server import BLKATPortalClient
+from meerkat_backend_interface.logger import log, set_logger
 
 
 def on_shutdown():
