@@ -6,7 +6,14 @@ from katportalclient import KATPortalClient
 from katportalclient.client import SensorNotFoundError
 import redis
 from src.redis_tools import *
+
 from functools import partial
+
+from .redis_tools import (
+    REDIS_CHANNELS,
+    write_pair_redis,
+    write_list_redis
+    )
 
 from .logger import log as logger
 
@@ -90,7 +97,8 @@ class BLKATPortalClient(object):
                 sensor_value = msg['msg_data']['value']
                 if sensor_name in self.async_sensor_list:
                     key = "{}:{}".format(product_id, sensor_name)
-                    write_pair_redis(self.redis_server, key, repr(sensor_value))
+                    write_pair_redis(self.redis_server, key, repr(sensor_value)) # ultimately this line may not be needed
+                    publish_to_redis(self.redis_server, REDIS_CHANNELS.sensor_alerts, '{}:{}'.format(sensor_name, sensor_value))
                     print('Sensor value stored: {} = {}'.format(sensor_name, sensor_value))
                 else:
                     print('Unlisted sensor; value discarded')
