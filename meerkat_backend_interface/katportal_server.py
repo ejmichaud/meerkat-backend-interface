@@ -5,9 +5,13 @@ import uuid
 from katportalclient import KATPortalClient
 from katportalclient.client import SensorNotFoundError
 import redis
-from src.redis_tools import *
 from functools import partial
 
+from .redis_tools import (
+    REDIS_CHANNELS,
+    write_pair_redis,
+    write_list_redis,
+    )
 from .logger import log as logger
 
 
