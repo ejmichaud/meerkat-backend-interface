@@ -45,7 +45,6 @@ def write_list_redis(server, key, values):
 
         Returns:
             True if success, False otherwise, and logs either an 'debug' or 'error' message
-
     """
     try:
         if server.exists(key):

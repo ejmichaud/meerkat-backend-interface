@@ -5,7 +5,6 @@ import uuid
 from katportalclient import KATPortalClient
 from katportalclient.client import SensorNotFoundError
 import redis
-
 from functools import partial
 
 from .redis_tools import (
@@ -14,7 +13,7 @@ from .redis_tools import (
     write_list_redis,
     publish_to_redis
     )
-
+    
 from .logger import log as logger
 
 class BLKATPortalClient(object):

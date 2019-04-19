@@ -43,6 +43,7 @@ from redis_tools import REDIS_CHANNELS, write_pair_redis, write_list_redis, publ
 # to handle halt request
 from concurrent.futures import Future
 from tornado import gen
+from tornado.concurrent import chain_future
 
 from .logger import log
 
