@@ -92,8 +92,8 @@ def main(port):
     logging.basicConfig(format=FORMAT)
     log.setLevel(logging.DEBUG)
     log.info("Starting distributor")
-    re = redis.StrictRedis(port=port)
-    ps = re.pubsub(ignore_subscribe_messages=True)
+    red = redis.StrictRedis(port=port)
+    ps = red.pubsub(ignore_subscribe_messages=True)
     ps.subscribe(CHANNEL)
     try:
         for message in ps.listen():
@@ -104,7 +104,7 @@ def main(port):
             msg_type = msg_parts[0]
             product_id = msg_parts[1]
             if msg_type == 'configure':
-                all_streams = json.loads(json_str_formatter(re.get("{}:streams".format(product_id))))
+                all_streams = json.loads(json_str_formatter(red.get("{}:streams".format(product_id))))
                 streams = all_streams[STREAM_TYPE]
                 addr_list, port = parse_spead_addresses(streams.values()[0])
                 nstreams = len(addr_list)
@@ -112,7 +112,7 @@ def main(port):
                     log.warning("More than {} ({}) stream addresses found".format(NCHANNELS, nstreams))
                 for i in range(min(nstreams, NCHANNELS)):
                     msg = "{}:configure:stream:{}".format(product_id, addr_list[i])
-                    re.publish(CHANNELS[i], msg)
+                    red.publish(CHANNELS[i], msg)
     except KeyboardInterrupt:
         log.info("Stopping distributor")
         sys.exit(0)
