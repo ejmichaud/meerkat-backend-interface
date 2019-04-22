@@ -2,7 +2,7 @@
 *The information made available by this interface and the format within which it is stored in redis*
 
 # Key / Value Pairs
-*Here are the redis keys that are created by the `KATCP Server` and `Katportal Client` modules and descriptions of their values.*
+*Here are the redis keys that are created by the `KATCP Server` and `KATPortal Client` modules and descriptions of their values.*
 
 ### `current:obs:id` --> (string): 
 The `product_id` sent with the most recent `?configure` request. A product id is specific to a subarray and will last for some period of time (over the course of observing multiple targets). Note that product ids can be repeated at different times in the telescope's lifespan, so do not use it as a unique identifier to label the data products! The product id is used as a temporary identifier of a currently activated subarray. Accordingly, metadata for this subarray is grouped with this product id. For instance, if the product id of the currently-in-use subarray #2 is `array_1_bc856M4k`, then metadata will have a redis key in the form of `array_1_bc856M4k:<type of data>`, e.g. `array_1_bc856M4k:n_channels`.
@@ -20,7 +20,7 @@ The number of frequency channels provided by the CFB.
 The CAM name for the instance of the BLUSE data proxy that is being configured.  For example, “BLUSE_3”.  This can be used to query sensors on the correct proxy.  Note that for BLUSE there will only be a single instance of the proxy in a subarray.
 
 ### `[product_id]:cam:url` --> (string):
-The url used by the `Katportal Client` module to query additional metadata for the subarray associated with the given product id.
+The url used by the `KATPortal Client` module to query additional metadata for the subarray associated with the given product id.
 
 ### `[product_id]:streams` --> (string):
 A json-formatted string for a python dictionary that contains different URL's for the different types of raw data that are produced in the current observation being conducted on the given product_id's subarray. To convert this string to a python dictionary, simply call `json.loads(<streams_string>)`, and it will return a python dictionary object. This dictionary will look something like this:
@@ -49,7 +49,7 @@ It may contain:
 * Two beam streams, with type: cbf.tied_array_channelised_voltage.  The stream names ending in x are horizontally polarised, and those ending in y are vertically polarised
 
 ### `[product_id]:[sensor_name]` --> (string):
-Most of the keys published to redis will look like this, and are created from the `Katportal Client` module. The `[product_id]` is that of the subarray that is queried by the `Katportal Client`. The value of this key a repr string for a python dictionary containing sensor information. The dictionary looks like this:
+Most of the keys published to redis will look like this, and are created from the `KATPortal Client` module. The `[product_id]` is that of the subarray that is queried by the `KATPortal Client`. The value of this key a repr string for a python dictionary containing sensor information. The dictionary looks like this:
 ```
 {
     'status': u'nominal', 
@@ -70,3 +70,13 @@ Most of the keys published to redis will look like this, and are created from th
 * `capture-stop:[product_id]` --> sent when a capture-stop request is sent to the `KATCP Server`. Gives the associated product_id. Signals the end of an observation. Should be used to trigger other modules to stop ingesting data.
 * `capture-done:[product_id]` --> sent when a capture-done request is sent to the `KATCP Server`. Gives the associated product_id. Signals that the current program block is done.
 * `deconfigure:[product_id]` --> sent when a deconfigure request is sent to the `KATCP Server`. Gives the associated product_id
+
+## Channel: `sensor_alerts`
+
+* `[sensor_name]:[sensor_val]` --> sent when a sensor (which belongs to the list of sensors for subscription in the `KATPortal Client`) reports a new value.
+
+## Channel: `chan[n]`
+
+* `[product_id]:configure:stream:[addr_list[n]]` --> sent when a configure request is sent to the `KATCP Server`
+
+
