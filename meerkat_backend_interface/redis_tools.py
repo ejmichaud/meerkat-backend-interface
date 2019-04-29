@@ -4,6 +4,7 @@ from .logger import log
 class REDIS_CHANNELS:
     """The redis channels that may be published to"""
     alerts = "alerts"
+    sensor_alerts = "sensor_alerts" # Channel for sensor vals (for immediate update on change). 
 
 
 def write_pair_redis(server, key, value, expiration=None):
@@ -44,7 +45,6 @@ def write_list_redis(server, key, values):
 
         Returns:
             True if success, False otherwise, and logs either an 'debug' or 'error' message
-
     """
     try:
         if server.exists(key):
