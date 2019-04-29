@@ -14,9 +14,7 @@ It's important to include the `--recurse-submodules` because certain components 
 
 First, make sure you `cd meerkat-backend-interface`, then:
 
-1. `pip install ./reynard/`
-2. `pip install katversion`
-3. `pip install git+https://github.com/ska-sa/katportalclient`
-4. `pip install -r requirements.txt`
+1. `pip install katversion`
+2. `pip install -r requirements.txt`
 
 You should hopefully then be able to run all the modules. 
