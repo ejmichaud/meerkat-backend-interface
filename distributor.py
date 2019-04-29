@@ -4,19 +4,14 @@ from optparse import OptionParser
 import json
 import logging
 import sys
-
 import redis
-
 from meerkat_backend_interface import redis_tools
 from meerkat_backend_interface.logger import log
-
 
 CHANNEL     = redis_tools.REDIS_CHANNELS.alerts  # Redis channel to listen on
 STREAM_TYPE = 'cbf.antenna_channelised_voltage'  # Type of stream to distribute
 NCHANNELS   = 64                                 # Number of channels to distribute into
-
 CHANNELS = ["chan{:03d}".format(n) for n in range(NCHANNELS)]
-
 
 def json_str_formatter(str_dict):
     """Formatting for json.loads
@@ -31,7 +26,6 @@ def json_str_formatter(str_dict):
     str_dict = str_dict.replace('\'', '"')  # Swap quote types for json format
     str_dict = str_dict.replace('u', '')  # Remove unicode 'u'
     return str_dict
-
 
 def create_ip_list(addr0, n_addrs):
     """Creates list of IP multicast subscription addresses.
@@ -48,7 +42,6 @@ def create_ip_list(addr0, n_addrs):
     for i in range(1, n_addrs):
         addr_list.append(prefix + '.{}'.format(i + int(suffix0)))
     return addr_list
-
 
 def parse_spead_addresses(spead_addrs):
     """Parses spead addresses given in the format: spead://<ip>[+<count>]:<port>
@@ -72,7 +65,6 @@ def parse_spead_addresses(spead_addrs):
         addr_list = [addrs]
     return addr_list, int(port)
 
-
 def cli():
     usage = "usage: %prog [options]"
     parser = OptionParser(usage=usage)
@@ -82,9 +74,7 @@ def cli():
     # if not opts.port:
     #     print "MissingArgument: Port number"
     #     sys.exit(-1)
-
     main(port=opts.port)
-
 
 def main(port):
     FORMAT = "[ %(levelname)s - %(asctime)s - %(filename)s:%(lineno)s] %(message)s"
@@ -119,7 +109,6 @@ def main(port):
     except Exception as e:
         log.error(e)
         sys.exit(1)
-
 
 if __name__ == "__main__":
     cli()
