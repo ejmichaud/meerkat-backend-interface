@@ -23,7 +23,7 @@ requires = [
     'omnijson==0.1.2',
     'pipreqs==0.4.9',
     'ply==3.11',
-    'psutil==5.4.6',
+    'psutil==5.6.6',
     'pyparsing==2.2.0',
     'pyperclip==1.6.2',
     'redis==2.10.6',
