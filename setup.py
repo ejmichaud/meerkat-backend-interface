@@ -33,7 +33,7 @@ requires = [
     'slacker==0.9.65',
     'subprocess32==3.5.2',
     'tornado==4.5.3',
-    'ujson==1.35',
+    'ujson==5.2.0',
     'urllib3==1.23',
     'wcwidth==0.1.7',
     'weather-api==1.0.4',
