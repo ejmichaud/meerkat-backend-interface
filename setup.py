@@ -18,7 +18,7 @@ requires = [
     'Jinja2>=2.10.1',
     'katcp==0.6.2',
     'katpoint',
-    'lxml==4.2.3',
+    'lxml==4.9.1',
     'MarkupSafe==1.0',
     'omnijson==0.1.2',
     'pipreqs==0.4.9',
