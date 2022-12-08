@@ -3,7 +3,7 @@ import setuptools
 requires = [
     'backports-abc==0.5',
     'backports.ssl-match-hostname==3.5.0.1',
-    'certifi==2018.4.16',
+    'certifi==2022.12.7',
     'chardet==3.0.4',
     'cmd2==0.8.7',
     'contextlib2==0.5.5',
